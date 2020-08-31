@@ -50,16 +50,37 @@ class Memory:
 
 
 class ActorCritic(nn.Module):
-    def __init__(self, state_dim, action_dim, n_latent_var):
+    def __init__(self, state_dim, transform_dim, feature_dim, n_latent_var):
         super(ActorCritic, self).__init__()
 
+        self.transform_dim = transform_dim
+        self.feature_dim = feature_dim
+
         # actor
-        self.action_layer = nn.Sequential(
+        self.transform_action_layer = nn.Sequential(
             nn.Linear(state_dim, n_latent_var),
             nn.Tanh(),
             nn.Linear(n_latent_var, n_latent_var),
             nn.Tanh(),
-            nn.Linear(n_latent_var, action_dim),
+            nn.Linear(n_latent_var, transform_dim),
+            nn.Softmax(dim=-1)
+        )
+
+        self.feature1_action_layer = nn.Sequential(
+            nn.Linear(state_dim + transform_dim, n_latent_var),
+            nn.Tanh(),
+            nn.Linear(n_latent_var, n_latent_var),
+            nn.Tanh(),
+            nn.Linear(n_latent_var, feature_dim),
+            nn.Softmax(dim=-1)
+        )
+
+        self.feature2_action_layer = nn.Sequential(
+            nn.Linear(state_dim + transform_dim, n_latent_var),
+            nn.Tanh(),
+            nn.Linear(n_latent_var, n_latent_var),
+            nn.Tanh(),
+            nn.Linear(n_latent_var, feature_dim),
             nn.Softmax(dim=-1)
         )
 
@@ -75,28 +96,62 @@ class ActorCritic(nn.Module):
     def forward(self):
         raise NotImplementedError
 
-    def act(self, state, memory):
+    def action_layer(self, state):
         state = torch.from_numpy(state).float().to(device)
-        action_probs = self.action_layer(state)
-        dist = Categorical(action_probs)
-        action = dist.sample()
+        transform_probs = self.transform_action_layer(state)
+        t_dist = Categorical(transform_probs)
+        transform = t_dist.sample()
+
+        tmp = torch.zeros(self.transform_dim)
+        tmp[transform] = 1
+        state = torch.cat([state, tmp])
+
+        if transform < self.transform_dim - 1:
+            feature_probs = self.feature1_action_layer(state)
+            f_dist = Categorical(feature_probs)
+            feature = f_dist.sample()
+            action = transform * self.feature_dim + feature
+            log_probs = t_dist.log_prob(transform) + f_dist.log_prob(feature)
+        else:
+            feature_probs = self.feature2_action_layer(state)
+            f_dist = Categorical(feature_probs)
+            features = f_dist.sample((2,))
+            action = transform * self.feature_dim + features[0] * self.feature_dim + features[1]
+            log_probs = t_dist.log_prob(transform) + f_dist.log_prob(features[0]) + f_dist.log_prob(features[1])
+
+        return action, log_probs, t_dist, f_dist
+
+    def act(self, state, memory):
+        action, log_probs, t_dist, f_dist = self.action_layer(state)
 
         memory.states.append(state)
         memory.actions.append(action)
-        memory.logprobs.append(dist.log_prob(action))
+        memory.logprobs.append(log_probs)
 
         return action.item()
 
-    def evaluate(self, state, action):
-        action_probs = self.action_layer(state)
-        dist = Categorical(action_probs)
+    def evaluate(self, states, actions):
+        action_logprobs = []
+        dist_entropys = []
+        for i in range(states.shape[0]):
+            action, log_probs, t_dist, f_dist = self.action_layer(states[i])
+            action = action[i]
+            if action < (self.transform_dim - 1) * self.feature_dim:
+                transform = action / self.feature_dim
+                feature = action % self.feature_dim
+                action_logprobs.append(t_dist.log_prob(transform) + f_dist.log_prob(feature))
+            else:
+                transform = self.transform_dim - 1
+                feature0 = (action - transform * self.feature_dim) / self.feature_dim
+                feature1 = (action - transform * self.feature_dim) % self.feature_dim
+                action_logprobs.append(t_dist.log_prob(transform) + f_dist.log_prob(feature0) + f_dist.log_prob(feature1))
+            dist_entropys.append(t_dist.entropy() + f_dist.entropy())
+        action_logprobs = torch.stack(action_logprobs)
+        dist_entropys = torch.stack(dist_entropys)
 
-        action_logprobs = dist.log_prob(action)
-        dist_entropy = dist.entropy()
+        state_value = self.value_layer(states)
 
-        state_value = self.value_layer(state)
-
-        return action_logprobs, torch.squeeze(state_value).double(), dist_entropy
+        return action_logprobs, torch.squeeze(state_value).double(), dist_entropys
 
 
 class PPO:
@@ -160,11 +215,12 @@ class PPO:
 class Action(object):
     def __init__(self, data, bounds):
         self.data = data
-        self.feature_nums = data.shape[1]
-        self.action_num = 2  # 处理方式数目
-        self.combinations = list(combinations([i for i in range(self.feature_nums)], 2))  # 特征组合
-        self.action_dim = self.feature_nums * self.action_num + len(self.combinations)
-        self.actions = [i for i in range(self.action_dim)]  # 动态搜索空间
+        self.feature_dim = data.shape[1]
+        self.action_dim = 2 + 1  # 处理方式数目 + feature cross
+        # self.combinations = list(combinations([i for i in range(self.feature_nums)], 2))  # 特征组合
+        # self.action_dim = self.feature_nums * self.action_num + len(self.combinations)
+        self.action_dim = (self.action_dim - 1) * self.feature_dim + self.feature_dim * self.feature_dim
+        self.actions = [self.action_dim]  # 动态搜索空间
         # self.selected = [] #所有已经处理过的action
         self.processed = {}  # 处理过后数据的存储
         self.episode_done = []  # 单次episode做过的action
@@ -179,15 +235,16 @@ class Action(object):
     def step(self, _action):
         action = np.zeros(2, dtype='int')
 
-        is_combinations = _action / self.action_num >= self.feature_nums
+        is_combinations = _action >= (self.action_dim - 1) * self.feature_dim
         if not is_combinations:
-            action[0] = _action / self.action_num
-            action[1] = _action % self.action_num
+            action[0] = _action % self.feature_dim
+            action[1] = _action / self.feature_dim
         else:
-            action[0] = self.combinations[_action - self.feature_nums * self.action_num - 1][0]
-            action[1] = self.combinations[_action - self.feature_nums * self.action_num - 1][1]
+            action[0] = (_action - (self.action_dim - 1) * self.feature_dim) / self.feature_dim
+            action[1] = (_action - (self.action_dim - 1) * self.feature_dim) % self.feature_dim
+            action.sort()
 
-        print(_action, '---------', action)
+        print(is_combinations,'.................', _action, '---------', action)
 
         if _action not in self.actions:
             return True
