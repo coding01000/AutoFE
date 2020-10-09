@@ -30,7 +30,7 @@ import torch.optim as optim
 import torch
 import torch.nn.functional as F
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")  # "cuda:0" if torch.cuda.is_available() else
 
 
 class Memory:
@@ -67,7 +67,8 @@ class ActorCritic(nn.Module):
         )
 
         self.feature1_action_layer = nn.Sequential(
-            nn.Linear(state_dim + transform_dim, n_latent_var),
+            # nn.Linear(state_dim + transform_dim, n_latent_var),
+            nn.Linear(state_dim + 1, n_latent_var),
             nn.Tanh(),
             nn.Linear(n_latent_var, n_latent_var),
             nn.Tanh(),
@@ -76,7 +77,8 @@ class ActorCritic(nn.Module):
         )
 
         self.feature2_action_layer = nn.Sequential(
-            nn.Linear(state_dim + transform_dim, n_latent_var),
+            # nn.Linear(state_dim + transform_dim, n_latent_var),
+            nn.Linear(state_dim + 1, n_latent_var),
             nn.Tanh(),
             nn.Linear(n_latent_var, n_latent_var),
             nn.Tanh(),
@@ -97,13 +99,15 @@ class ActorCritic(nn.Module):
         raise NotImplementedError
 
     def action_layer(self, state):
-        state = torch.from_numpy(state).float().to(device)
+        # state = torch.from_numpy(state).float().to(device)
         transform_probs = self.transform_action_layer(state)
         t_dist = Categorical(transform_probs)
         transform = t_dist.sample()
 
-        tmp = torch.zeros(self.transform_dim)
-        tmp[transform] = 1
+        tmp = torch.zeros(1)
+        tmp[0] = transform
+        # state = state.resize_(len(state)+1)
+        # state[-1] = transform
         state = torch.cat([state, tmp])
 
         if transform < self.transform_dim - 1:
@@ -122,9 +126,10 @@ class ActorCritic(nn.Module):
         return action, log_probs, t_dist, f_dist
 
     def act(self, state, memory):
+        state = torch.from_numpy(state).float().to(device)
+        memory.states.append(state)
         action, log_probs, t_dist, f_dist = self.action_layer(state)
 
-        memory.states.append(state)
         memory.actions.append(action)
         memory.logprobs.append(log_probs)
 
@@ -135,7 +140,7 @@ class ActorCritic(nn.Module):
         dist_entropys = []
         for i in range(states.shape[0]):
             action, log_probs, t_dist, f_dist = self.action_layer(states[i])
-            action = action[i]
+            action = actions[i]
             if action < (self.transform_dim - 1) * self.feature_dim:
                 transform = action / self.feature_dim
                 feature = action % self.feature_dim
@@ -144,7 +149,7 @@ class ActorCritic(nn.Module):
                 transform = self.transform_dim - 1
                 feature0 = (action - transform * self.feature_dim) / self.feature_dim
                 feature1 = (action - transform * self.feature_dim) % self.feature_dim
-                action_logprobs.append(t_dist.log_prob(transform) + f_dist.log_prob(feature0) + f_dist.log_prob(feature1))
+                action_logprobs.append(t_dist.log_prob(torch.tensor(transform)) + f_dist.log_prob(feature0) + f_dist.log_prob(feature1))
             dist_entropys.append(t_dist.entropy() + f_dist.entropy())
         action_logprobs = torch.stack(action_logprobs)
         dist_entropys = torch.stack(dist_entropys)
@@ -155,16 +160,16 @@ class ActorCritic(nn.Module):
 
 
 class PPO:
-    def __init__(self, state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip):
+    def __init__(self, state_dim, action_dim, feature_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip):
         self.lr = lr
         self.betas = betas
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.K_epochs = K_epochs
 
-        self.policy = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+        self.policy = ActorCritic(state_dim, action_dim, feature_dim, n_latent_var).to(device)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=lr, betas=betas)
-        self.policy_old = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+        self.policy_old = ActorCritic(state_dim, action_dim, feature_dim, n_latent_var).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
         self.MseLoss = nn.MSELoss()
@@ -216,14 +221,15 @@ class Action(object):
     def __init__(self, data, bounds):
         self.data = data
         self.feature_dim = data.shape[1]
-        self.action_dim = 2 + 1  # 处理方式数目 + feature cross
+        self.action_num = 2 + 1  # 处理方式数目 + feature cross
         # self.combinations = list(combinations([i for i in range(self.feature_nums)], 2))  # 特征组合
         # self.action_dim = self.feature_nums * self.action_num + len(self.combinations)
-        self.action_dim = (self.action_dim - 1) * self.feature_dim + self.feature_dim * self.feature_dim
-        self.actions = [self.action_dim]  # 动态搜索空间
+        self.action_dim = (self.action_num - 1) * self.feature_dim + self.feature_dim * self.feature_dim
+        self.actions = [i for i in range(self.action_dim)]  # 动态搜索空间
         # self.selected = [] #所有已经处理过的action
         self.processed = {}  # 处理过后数据的存储
         self.episode_done = []  # 单次episode做过的action
+        self.one_fe = []
         self.bounds = bounds
         self.ptr = 0
 
@@ -231,23 +237,28 @@ class Action(object):
         self.ptr = 0
         self.actions = [i for i in range(self.action_dim)]
         self.episode_done = []
+        self.one_fe = []
 
     def step(self, _action):
         action = np.zeros(2, dtype='int')
 
-        is_combinations = _action >= (self.action_dim - 1) * self.feature_dim
+        is_combinations = _action >= (self.action_num - 1) * self.feature_dim
         if not is_combinations:
             action[0] = _action % self.feature_dim
             action[1] = _action / self.feature_dim
         else:
-            action[0] = (_action - (self.action_dim - 1) * self.feature_dim) / self.feature_dim
-            action[1] = (_action - (self.action_dim - 1) * self.feature_dim) % self.feature_dim
+            action[0] = (_action - (self.action_num - 1) * self.feature_dim) / self.feature_dim
+            action[1] = (_action - (self.action_num - 1) * self.feature_dim) % self.feature_dim
             action.sort()
-
-        print(is_combinations,'.................', _action, '---------', action)
 
         if _action not in self.actions:
             return True
+        # if is_combinations and action[0] == action[1]:
+        #     return True
+        if (not is_combinations) and action[0] in self.one_fe:
+            return True
+
+        print(is_combinations, '.................', _action, '---------', action)
 
         self.episode_done.append(_action)
 
@@ -267,13 +278,15 @@ class Action(object):
                 ohe = OneHotEncoder(sparse=True, dtype=np.float32, handle_unknown='ignore')
                 tmp = ohe.fit_transform(tmp.values.reshape(-1, 1))
             self.processed[_action] = tmp
-        if is_combinations:
-            self.actions.remove(_action)
-        else:
-            start = action[0] * self.action_num
-            end = start + self.action_num
-            for i in range(start, end):
-                self.actions.remove(i)
+        self.actions.remove(_action)
+        # if is_combinations:
+        #     self.actions.remove(_action)
+        # else:
+        if not is_combinations:
+            self.one_fe.append(action[0])
+        #
+        #     for i in range(len(self.actions)):
+        #         self.actions.remove(i)
         return self.isDone()
 
     def isDone(self):
@@ -334,7 +347,7 @@ class AmazonEmployeeEvn(object):
             random_state=432,
             solver='liblinear',
             max_iter=1000,
-            n_jobs=-1,
+            # n_jobs=-1,
         )
         y = self.label
         stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
@@ -348,9 +361,10 @@ def main():
     # creating environment
     env = AmazonEmployeeEvn(15)
     state_dim = env.state_dim
-    action_dim = env.action.action_dim
+    action_dim = env.action.action_num
+    feature_dim = env.action.feature_dim
     render = False
-    solved_reward = 36  # stop training if avg_reward > solved_reward
+    solved_reward = 100  # stop training if avg_reward > solved_reward
     log_interval = 20  # print avg reward in the interval
     max_episodes = 500000  # max training episodes
     max_timesteps = 300  # max timesteps in one episode
@@ -369,10 +383,10 @@ def main():
         env.seed(random_seed)
 
     memory = Memory()
-    ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
+    ppo = PPO(state_dim, action_dim, feature_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
 
-    ppo.policy.load_state_dict(torch.load('./PPO_amazon_test.pth'))
-    ppo.policy_old.load_state_dict(torch.load('./PPO_amazon_test.pth'))
+    # ppo.policy.load_state_dict(torch.load('./PPO_amazon_test_improve.pth'))
+    # ppo.policy_old.load_state_dict(torch.load('./PPO_amazon_test_improve.pth'))
 
     print(lr, betas)
 
@@ -414,10 +428,10 @@ def main():
         avg_length += t
 
         # stop training if avg_reward > solved_reward
-        if running_reward > (log_interval * solved_reward):
-            print("########## Solved! ##########")
-            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-            break
+        # if running_reward > (log_interval * solved_reward):
+        #     print("########## Solved! ##########")
+        #     torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
+        #     break
 
         # logging
         if i_episode % log_interval == 0:

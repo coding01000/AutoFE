@@ -2,159 +2,14 @@
 
 import numpy as np
 import scipy
-import gc
-import pandas as pd
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-from sklearn import metrics
 import os
-from typing import Dict, List, Tuple
 from itertools import combinations, permutations
-
-import random
-import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.model_selection import cross_validate
-
-from typing import Deque, Dict, List, Tuple
-from collections import deque
-import math
-
-from catboost.datasets import amazon
+import pandas as pd
 import torch
-import torch.nn as nn
-from torch.distributions import Categorical
-from torch.nn.utils import clip_grad_norm_
-import torch.optim as optim
-import torch
-import torch.nn.functional as F
-
-device = torch.device("cpu")     # "cuda:0" if torch.cuda.is_available() else "cpu"
-
-
-class Memory:
-    def __init__(self):
-        self.actions = []
-        self.states = []
-        self.logprobs = []
-        self.rewards = []
-        self.is_terminals = []
-
-    def clear_memory(self):
-        del self.actions[:]
-        del self.states[:]
-        del self.logprobs[:]
-        del self.rewards[:]
-        del self.is_terminals[:]
-
-
-class ActorCritic(nn.Module):
-    def __init__(self, state_dim, action_dim, n_latent_var):
-        super(ActorCritic, self).__init__()
-
-        # actor
-        self.action_layer = nn.Sequential(
-            nn.Linear(state_dim, n_latent_var),
-            nn.Tanh(),
-            nn.Linear(n_latent_var, n_latent_var),
-            nn.Tanh(),
-            nn.Linear(n_latent_var, action_dim),
-            nn.Softmax(dim=-1)
-        )
-
-        # critic
-        self.value_layer = nn.Sequential(
-            nn.Linear(state_dim, n_latent_var),
-            nn.Tanh(),
-            nn.Linear(n_latent_var, n_latent_var),
-            nn.Tanh(),
-            nn.Linear(n_latent_var, 1)
-        )
-
-    def forward(self):
-        raise NotImplementedError
-
-    def act(self, state, memory):
-        state = torch.from_numpy(state).float().to(device)
-        action_probs = self.action_layer(state)
-        dist = Categorical(action_probs)
-        action = dist.sample()
-
-        memory.states.append(state)
-        memory.actions.append(action)
-        memory.logprobs.append(dist.log_prob(action))
-
-        return action.item()
-
-    def evaluate(self, state, action):
-        action_probs = self.action_layer(state)
-        dist = Categorical(action_probs)
-
-        action_logprobs = dist.log_prob(action)
-        dist_entropy = dist.entropy()
-
-        state_value = self.value_layer(state)
-
-        return action_logprobs, torch.squeeze(state_value).double(), dist_entropy
-
-
-class PPO:
-    def __init__(self, state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip):
-        self.lr = lr
-        self.betas = betas
-        self.gamma = gamma
-        self.eps_clip = eps_clip
-        self.K_epochs = K_epochs
-
-        self.policy = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
-        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=lr, betas=betas)
-        self.policy_old = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
-        self.policy_old.load_state_dict(self.policy.state_dict())
-
-        self.MseLoss = nn.MSELoss()
-
-    def update(self, memory):
-        # Monte Carlo estimate of state rewards:
-
-        rewards = []
-        discounted_reward = 0
-        for reward, is_terminal in zip(reversed(memory.rewards), reversed(memory.is_terminals)):
-            if is_terminal:
-                discounted_reward = 0
-            discounted_reward = reward + (self.gamma * discounted_reward)
-            rewards.insert(0, discounted_reward)
-
-        # Normalizing the rewards:
-        rewards = torch.DoubleTensor(rewards).to(device)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
-
-        # convert list to tensor
-        old_states = torch.stack(memory.states).to(device).detach()
-        old_actions = torch.stack(memory.actions).to(device).detach()
-        old_logprobs = torch.stack(memory.logprobs).to(device).detach()
-
-        # Optimize policy for K epochs:
-        for _ in range(self.K_epochs):
-            # Evaluating old actions and values :
-            logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
-
-            # Finding the ratio (pi_theta / pi_theta__old):
-            ratios = torch.exp(logprobs - old_logprobs.detach())
-
-            # Finding Surrogate Loss:
-            advantages = rewards - state_values.detach()
-            surr1 = ratios * advantages
-            surr2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.01 * dist_entropy
-
-            # take gradient step
-            self.optimizer.zero_grad()
-            loss.mean().backward()
-            self.optimizer.step()
-
-        # Copy new weights into old policy:
-        self.policy_old.load_state_dict(self.policy.state_dict())
+from PPO import PPO, Memory
 
 
 class Action(object):
@@ -187,7 +42,7 @@ class Action(object):
             action[0] = self.combinations[_action - self.feature_nums * self.action_num - 1][0]
             action[1] = self.combinations[_action - self.feature_nums * self.action_num - 1][1]
 
-        print(is_combinations, '..............', _action, '---------', action)
+        print(is_combinations, '..............', _action, '---------', f'[{action[0]}, {action[1]}]')
 
         if _action not in self.actions:
             return True
@@ -231,12 +86,19 @@ class Action(object):
         return x
 
 
-class AmazonEmployeeEvn(object):
+class TitanicEnv(object):
     def __init__(self, bounds):
-        data, _ = amazon()
-        # data = pd.read_csv('train.csv')
-        self.label = data['ACTION'].values
-        data.drop('ACTION', axis=1, inplace=True)
+        # data, _ = amazon()
+        data = pd.read_csv('./dataset/Titanic/train.csv')
+        self.label = data['Survived'].values
+        data.drop(['PassengerId', 'Survived', 'Ticket', 'Name', 'Cabin'], axis=1, inplace=True)
+
+        data['Embarked'] = data['Embarked'].astype(str)
+        data['Embarked'] = LabelEncoder().fit_transform(data['Embarked'])
+        data['Sex'] = LabelEncoder().fit_transform(data['Sex'])
+
+        data = data.fillna(0)
+
         self.action = Action(data, bounds)
         self.base_score = self.auc_score(data.values)
         self.state_dim = self.action.action_dim
@@ -280,16 +142,16 @@ class AmazonEmployeeEvn(object):
             # n_jobs=-1,
         )
         y = self.label
-        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
+        stats = cross_validate(model, x, y, groups=None, scoring='accuracy',
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 
 
 def main():
     ############## Hyperparameters ##############
-    env_name = "amazon_test"
+    env_name = "Titanic_Acc"
     # creating environment
-    env = AmazonEmployeeEvn(15)
+    env = TitanicEnv(15)
     state_dim = env.state_dim
     action_dim = env.action.action_dim
     render = False
@@ -314,8 +176,8 @@ def main():
     memory = Memory()
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
 
-    ppo.policy.load_state_dict(torch.load('./PPO_amazon_test.pth'))
-    ppo.policy_old.load_state_dict(torch.load('./PPO_amazon_test.pth'))
+    ppo.policy.load_state_dict(torch.load('./model/PPO_Titanic_Acc.pth'))
+    ppo.policy_old.load_state_dict(torch.load('./model/PPO_Titanic_Acc.pth'))
 
     print(lr, betas)
 
@@ -357,17 +219,17 @@ def main():
         avg_length += t
 
         # stop training if avg_reward > solved_reward
-        if running_reward > (log_interval * solved_reward):
-            print("########## Solved! ##########")
-            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-            break
+        # if running_reward > (log_interval * solved_reward):
+        #     print("########## Solved! ##########")
+        #     torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
+        #     break
 
         # logging
         if i_episode % log_interval == 0:
             avg_length = (avg_length / log_interval)
             running_reward = ((running_reward / log_interval))
-            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-            torch.save(i_episode, './PPO_{}.pth'.format('nn'))
+            torch.save(ppo.policy.state_dict(), './model/PPO_{}.pth'.format(env_name))
+            torch.save(i_episode, './model/PPO_{}.pth'.format('nn'))
             os.system('clear')
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
             running_reward = 0

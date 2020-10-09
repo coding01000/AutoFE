@@ -10,7 +10,7 @@ from sklearn import metrics
 import os
 from typing import Dict, List, Tuple
 from itertools import combinations, permutations
-
+from sklearn import linear_model
 import random
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
@@ -231,14 +231,17 @@ class Action(object):
         return x
 
 
-class AmazonEmployeeEvn(object):
+class BikeShareEvn(object):
     def __init__(self, bounds):
-        data, _ = amazon()
-        # data = pd.read_csv('train.csv')
-        self.label = data['ACTION'].values
-        data.drop('ACTION', axis=1, inplace=True)
+        # data, _ = amazon()
+        data = pd.read_csv('dataset/Bikeshare/train_unt.csv')
+        self.label = data['count'].values
+        data.drop('count', axis=1, inplace=True)
+        data.drop('registered', axis=1, inplace=True)
+        data.drop('casual', axis=1, inplace=True)
+        data['datetime'] = pd.to_datetime(data['datetime']).dt.hour
         self.action = Action(data, bounds)
-        self.base_score = self.auc_score(data.values)
+        self.base_score = self.rmse_score(data.values)
         self.state_dim = self.action.action_dim
         self.state = np.zeros(self.state_dim)
         self.one_episode = []  # 存储action执行序列
@@ -262,34 +265,26 @@ class AmazonEmployeeEvn(object):
 
     def _reward(self):
         if self.action.ptr < self.action.bounds:
-            return -10
+            return -10 * 10000
         one_episode = "".join(map(str, self.one_episode))
         if one_episode in self.episodes:
             return self.episodes[one_episode]
-        self.episodes[one_episode] = self.auc_score(self.action.data_sets()) - self.base_score
+        self.episodes[one_episode] = self.rmse_score(self.action.data_sets()) #- self.base_score
         return self.episodes[one_episode]
 
-    def auc_score(self, x):
-        model = LogisticRegression(
-            penalty='l2',
-            C=1.0,
-            fit_intercept=True,
-            random_state=432,
-            solver='liblinear',
-            max_iter=1000,
-            # n_jobs=-1,
-        )
+    def rmse_score(self, x):
+        model = linear_model.LinearRegression()
         y = self.label
-        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
+        stats = cross_validate(model, x, y, groups=None, scoring='neg_mean_squared_error',
                                cv=5, return_train_score=True)
-        return stats['test_score'].mean() * 100
+        return stats['test_score'].mean()
 
 
 def main():
     ############## Hyperparameters ##############
-    env_name = "amazon_test"
+    env_name = "BikeShare"
     # creating environment
-    env = AmazonEmployeeEvn(15)
+    env = BikeShareEvn(15)
     state_dim = env.state_dim
     action_dim = env.action.action_dim
     render = False
@@ -314,8 +309,8 @@ def main():
     memory = Memory()
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
 
-    ppo.policy.load_state_dict(torch.load('./PPO_amazon_test.pth'))
-    ppo.policy_old.load_state_dict(torch.load('./PPO_amazon_test.pth'))
+    ppo.policy.load_state_dict(torch.load('./model/PPO_BikeShare.pth'))
+    ppo.policy_old.load_state_dict(torch.load('./model/PPO_BikeShare.pth'))
 
     print(lr, betas)
 
@@ -357,17 +352,17 @@ def main():
         avg_length += t
 
         # stop training if avg_reward > solved_reward
-        if running_reward > (log_interval * solved_reward):
-            print("########## Solved! ##########")
-            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-            break
+        # if running_reward > (log_interval * solved_reward):
+        #     print("########## Solved! ##########")
+        #     torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
+        #     break
 
         # logging
         if i_episode % log_interval == 0:
             avg_length = (avg_length / log_interval)
             running_reward = ((running_reward / log_interval))
-            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-            torch.save(i_episode, './PPO_{}.pth'.format('nn'))
+            torch.save(ppo.policy.state_dict(), './model/PPO_{}.pth'.format(env_name))
+            torch.save(i_episode, './model/PPO_{}.pth'.format('nn'))
             os.system('clear')
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
             running_reward = 0
