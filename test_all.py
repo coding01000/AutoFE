@@ -15,6 +15,7 @@ from sklearn.model_selection import cross_validate
 import itertools
 import scipy
 import gc
+from dataprocessing.house_price_data import get_data
 
 # train, test = amazon()
 # train_sets = None
@@ -46,28 +47,40 @@ import gc
 # train['datetime'] = pd.to_datetime(train['datetime']).dt.hour
 # test['datetime'] = pd.to_datetime(test['datetime']).dt.hour
 
-train = pd.read_csv('./dataset/Titanic/train.csv')
-test = pd.read_csv('./dataset/Titanic/test.csv')
+# train = pd.read_csv('./dataset/Titanic/train.csv')
+# test = pd.read_csv('./dataset/Titanic/test.csv')
+# train_sets = None
+# test_sets = None
+#
+# target = ['PassengerId', 'Survived', 'Ticket', 'Name', 'Cabin']
+# col4train = [x for x in train.columns if x not in target]
+# y = train["Survived"].values
+# train = train[col4train]
+# submit = pd.DataFrame()
+# submit["PassengerId"] = test["PassengerId"]
+# test = test[col4train]
+#
+# em = LabelEncoder()
+# sex = LabelEncoder()
+# train['Embarked'] = em.fit_transform(train['Embarked'].astype(str))
+# train['Sex'] = sex.fit_transform(train['Sex'])
+# test['Embarked'] = em.transform(test['Embarked'].astype(str))
+# test['Sex'] = sex.transform(test['Sex'])
+#
+# train = train.fillna(0)
+# test = test.fillna(0)
+train, test = get_data(True)
 train_sets = None
 test_sets = None
-
-target = ['PassengerId', 'Survived', 'Ticket', 'Name', 'Cabin']
-col4train = [x for x in train.columns if x not in target]
-y = train["Survived"].values
-train = train[col4train]
+y = train["SalePrice"].apply(np.log1p).values
 submit = pd.DataFrame()
-submit["PassengerId"] = test["PassengerId"]
-test = test[col4train]
+submit["Id"] = test["Id"]
+print(submit.shape)
+train.drop('SalePrice', axis=1, inplace=True)
+train.drop('Id', axis=1, inplace=True)
+test.drop('Id', axis=1, inplace=True)
+col4train = train.columns
 
-em = LabelEncoder()
-sex = LabelEncoder()
-train['Embarked'] = em.fit_transform(train['Embarked'].astype(str))
-train['Sex'] = sex.fit_transform(train['Sex'])
-test['Embarked'] = em.transform(test['Embarked'].astype(str))
-test['Sex'] = sex.transform(test['Sex'])
-
-train = train.fillna(0)
-test = test.fillna(0)
 
 def cos(column_name):
     global train_sets
@@ -115,12 +128,19 @@ def comb(n1, n2):
 # bike share
 # combs = [[0, 4], [1, 2], [1, 4], [0, 2], [3, 5], [6, 8], [5, 8], [3, 6], [7, 0], [0, 3], [1, 5], [2, 5]]
 # Titanic
-combs = [[3, 5], [4, 5], [0, 5], [2, 4], [1, 2], [1, 4], [2, 6], [0, 1], [2, 3], [1, 5], [0, 3], [3, 4], [1, 6]]
+# combs = [[3, 5], [4, 5], [0, 5], [2, 4], [1, 2], [1, 4], [2, 6], [0, 1], [2, 3], [1, 5], [0, 3], [3, 4], [1, 6]]
+# house price
+# combs = [[19, 53], [28, 73], [0, 28], [4, 61], [0, 46], [42, 59], [37, 64], [60, 64], [41, 58], [34, 69], [44, 57],
+#          [25, 43], [47, 49], [30, 76], [36, 74], [17, 42], [32, 60], [6, 33], [60, 66]]
+combs = [
+    [39, 63], [10, 41], [21, 70], [28, 54], [53, 67], [31, 66], [17, 74], [52, 62], [53, 57], [33, 42], [24, 28],
+    [0, 43], [22, 37], [39, 58], [2, 25], [35, 61], [13, 41], [44, 67], [26, 50], [1, 34]
+]
 for i in combs:
     comb(i[0], i[1])
 
-l0 = [2]
-l1 = [6]
+l0 = []
+l1 = []
 for i in range(9):
     if i in l0:
         cos(col4train[i])
@@ -132,18 +152,22 @@ for i in range(9):
 # train.to_csv("train.csv", index=False)
 # test.to_csv("test.csv", index=False)
 
-model = LogisticRegression(
-    penalty='l2',
-    C=1.0,
-    fit_intercept=True,
-    random_state=432,
-    solver='liblinear',
-    max_iter=1000,
-    # n_jobs=-1,
-)
+# model = LogisticRegression(
+#     penalty='l2',
+#     C=1.0,
+#     fit_intercept=True,
+#     random_state=432,
+#     solver='liblinear',
+#     max_iter=1000,
+#     # n_jobs=-1,
+# )
 
-# from sklearn import tree
-# model = tree.DecisionTreeRegressor()
+from sklearn import tree
+model = tree.DecisionTreeRegressor()
+# from sklearn import linear_model
+# model = linear_model.SGDRegressor()
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+# model = GradientBoostingRegressor()
 
 del train
 del test
@@ -152,7 +176,8 @@ print('train...')
 model.fit(train_sets, y)
 # predictions = model.predict_proba(test_sets)[:, 1]
 predictions = model.predict(test_sets)
+predictions = np.expm1(predictions)
 print(predictions)
-submit["Survived"] = predictions
+submit["SalePrice"] = predictions
 
 submit.to_csv("submission.csv", index=False)

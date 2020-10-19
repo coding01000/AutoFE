@@ -4,14 +4,11 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import sklearn.metrics as metrics
 from sklearn.preprocessing import LabelEncoder
+import sys
 
-data = pd.read_csv('dataset/Titanic/train.csv')
-# a = pd.to_datetime(data['datetime']).dt
-encoder = LabelEncoder()
-data['Embarked'] = data['Embarked'].astype(str)
-data['Embarked'] = encoder.fit_transform(data['Embarked'])
-data = data.fillna(0)
-print(data['Cabin'])
+print(-sys.maxsize - 1)
+
+
 
 
 # import numpy as np
