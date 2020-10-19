@@ -6,6 +6,7 @@ from scipy import sparse
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 from sklearn.preprocessing import OneHotEncoder
+from scipy.stats import pearsonr
 from sklearn import preprocessing
 
 
@@ -38,14 +39,14 @@ class Action(object):
 
     def step(self, action):
 
-        df = self.data.copy()
+        df = self.data
         columns = df.columns
         for i in columns:
             tmp1 = self.processing[action](df[[i]])
-            tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-            if self.feature_selection(tmp2):
-                self.data[f'{i}_{1}'] = tmp1
-                self.X = tmp2
+            # tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
+            if self.feature_selection(tmp1.values):
+                df[f'{i}_{action}'] = tmp1
+                self.X = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
         self.base_score = self.get_score(self.X)
 
         return self.is_done()
@@ -60,9 +61,14 @@ class Action(object):
     def data_sets(self):
         return self.X
 
-    def feature_selection(self, features):
-        score = self.get_score(features)
-        if score - self.base_score > 0.1:
+    def feature_selection(self, feature):
+        # score = self.get_score(features)
+        # if score - self.base_score > 0.1:
+        #     return True
+        # return False
+        t = pearsonr(feature, self.y)
+        print(t)
+        if t[0] - 0.3 > 0:
             return True
         return False
 
