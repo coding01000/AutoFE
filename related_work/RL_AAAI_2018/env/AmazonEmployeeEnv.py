@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import pearsonr
+import random
 from sklearn import preprocessing
 
 
@@ -44,11 +45,12 @@ class Action(object):
         for i in columns:
             tmp1 = self.processing[action](df[[i]])
             new_col_name = f'{i}_{action}'
+            tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
             if new_col_name not in columns:
-                if self.feature_selection(tmp1.values.reshape([-1, ])):
+                if self.feature_selection(tmp2):
                     df[new_col_name] = tmp1
-                    self.X = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-        # self.base_score = self.get_score(self.X)
+                    self.X = tmp2
+        self.base_score = self.get_score(self.X)
 
         return self.is_done()
 
@@ -62,14 +64,14 @@ class Action(object):
     def data_sets(self):
         return self.X
 
-    def feature_selection(self, feature):
-        # score = self.get_score(features)
-        # if score - self.base_score > 0.1:
-        #     return True
-        # return False
-        t = pearsonr(feature, self.y)
-        if t[0] - 0.2 > 0:
+    def feature_selection(self, features):
+        score = self.get_score(features)
+        if score - self.base_score > 0.1:
             return True
+        return False
+        # t = pearsonr(feature, self.y)
+        # if t[0] - 0.01 > 0:
+        #     return True
         return False
 
     def get_score(self, x):
@@ -82,7 +84,7 @@ class Action(object):
             max_iter=1000,
         )
         y = self.y
-        stats = cross_validate(model, x, y, groups=None, scoring='accuracy',
+        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 
@@ -128,6 +130,9 @@ class AmazonEmployeeEvn(object):
         stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
+
+    def sample(self):
+        return random.randint(0, self.action.action_dim - 1)
 
 # if action == 0:
 #     for i in columns:
