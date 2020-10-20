@@ -26,9 +26,9 @@ from scipy import sparse
 #             lambda x: x.apply(np.tanh),
 #             lambda x: x.apply(np.tanh),
 #         ]
-df, _ = amazon()
-a = pearsonr(df[['RESOURCE']].values.reshape([-1, ]), df['ACTION'].values)
-print(a)
+# df, _ = amazon()
+# a = pearsonr(df[['RESOURCE']].values.reshape([-1, ]), df['ACTION'].values)
+# print(a)
 # action = 3
 # columns = df.columns
 # tmp2 = 0

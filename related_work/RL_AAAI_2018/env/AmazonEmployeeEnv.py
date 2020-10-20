@@ -43,11 +43,12 @@ class Action(object):
         columns = df.columns
         for i in columns:
             tmp1 = self.processing[action](df[[i]])
-            # tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-            if self.feature_selection(tmp1.values):
-                df[f'{i}_{action}'] = tmp1
-                self.X = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-        self.base_score = self.get_score(self.X)
+            new_col_name = f'{i}_{action}'
+            if new_col_name not in columns:
+                if self.feature_selection(tmp1.values.reshape([-1, ])):
+                    df[new_col_name] = tmp1
+                    self.X = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
+        # self.base_score = self.get_score(self.X)
 
         return self.is_done()
 
@@ -67,8 +68,7 @@ class Action(object):
         #     return True
         # return False
         t = pearsonr(feature, self.y)
-        print(t)
-        if t[0] - 0.3 > 0:
+        if t[0] - 0.2 > 0:
             return True
         return False
 
@@ -82,7 +82,7 @@ class Action(object):
             max_iter=1000,
         )
         y = self.y
-        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
+        stats = cross_validate(model, x, y, groups=None, scoring='accuracy',
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 
@@ -100,21 +100,19 @@ class AmazonEmployeeEvn(object):
     def reset(self):
         self.state = np.zeros(self.state_dim)
         self.action.reset()
+        self.base_score = self.auc_score(self.action.X)
         return self.state
 
     def step(self, _action):
         done = self.action.step(_action)
-        if done:
-            reward = self._reward()
-        else:
-            reward = 0
+        reward = self._reward()
         self.state[_action] += 1
         return self.state, reward, done
 
     def _reward(self):
-        if self.action.ptr < self.action.bounds:
-            return -10
-        reward = self.auc_score(self.action.data_sets()) - self.base_score
+        score = self.auc_score(self.action.data_sets())
+        reward = score - self.base_score
+        self.base_score = max(self.base_score, score)
         return reward
 
     def auc_score(self, x):
