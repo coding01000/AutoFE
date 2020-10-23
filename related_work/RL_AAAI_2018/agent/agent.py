@@ -228,6 +228,7 @@ class DQNAgent:
 
         # networks: dqn, dqn_target
         self.dqn = Network(obs_dim, action_dim).to(self.device)
+        self.dqn.load_state_dict(torch.load('./model/agent.pth'))
         self.dqn_target = Network(obs_dim, action_dim).to(self.device)
         self.dqn_target.load_state_dict(self.dqn.state_dict())
         self.dqn_target.eval()
@@ -347,7 +348,8 @@ class DQNAgent:
             if frame_idx % plotting_interval == 0:
                 self._plot(frame_idx, scores, losses, epsilons)
                 self.frame_ptr = frame_idx
-                self.save('../model/agent.model')
+                torch.save(self.dqn_target.state_dict(), './model/agent.pth')
+                # self.save('./model/agent.pth')
 
         # self.env.close()
 

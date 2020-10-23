@@ -6,7 +6,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectFromModel
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
-from related_work.RL_AAAI_2018.env import AmazonEmployeeEvn
+from related_work.RL_AAAI_2018.env.AmazonEmployeeEnv import AmazonEmployeeEvn
 from catboost.datasets import amazon
 from scipy.stats import pearsonr
 from sklearn import preprocessing
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     memory_size = 1000
     batch_size = 64
     target_update = 200
-    epsilon_decay = 1 / 50000
+    epsilon_decay = 1 / 10000
 
     agent = DQNAgent(env, memory_size, batch_size, target_update, epsilon_decay)
 

@@ -29,7 +29,6 @@ class Action(object):
             lambda x: x.apply(np.sin),
             lambda x: x.apply(np.cos),
             lambda x: x.apply(np.tanh),
-            lambda x: x.apply(np.tanh),
         ]
         self.action_dim = len(self.processing)
 
@@ -43,7 +42,10 @@ class Action(object):
         df = self.data
         columns = df.columns
         for i in columns:
-            tmp1 = self.processing[action](df[[i]])
+            tmp1: pd.DataFrame = self.processing[action](df[[i]])
+            tmp1 = tmp1.replace([np.inf, -np.inf], np.nan)
+            if tmp1.isna().any().any():
+                return True
             new_col_name = f'{i}_{action}'
             tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
             if new_col_name not in columns:
