@@ -1,6 +1,13 @@
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
+from sklearn.linear_model import LinearRegression
+
+
+def get_regress_predict(x, y):
+    model = LinearRegression()
+    model.fit(x, y)
+    return model.predict(x)
 
 
 def get_class_predict(x, y):

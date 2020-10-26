@@ -1,5 +1,8 @@
+from related_work.AutoCross.dataset.dataset import amazon
 
-a = {}
-def ex(b, c):
-    a[b] = c
-    return a
+if __name__ == '__main__':
+    train, label = amazon()
+    l = train.columns
+    print(l)
+    l.append('a')
+    print(l)

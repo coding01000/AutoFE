@@ -27,7 +27,7 @@ def expanded_root_node(original_data: pd.DataFrame):
     global df
 
     df = mul_granularity_discretization(original_data)
-    columns = df.columns
+    columns = list(df.columns)
     combs = combinations(columns, 2)
     for pair in combs:
         if pair is pair_is_eq(pair):
@@ -59,7 +59,7 @@ def expansion(new_feature):
         name = cols[0]
         tmp = df[cols[0]].apply(str)
         for i in range(1, len(cols)):
-            tmp += df[cols[i]]
+            tmp += df[cols[i]].apply(str)
             name += f'___{cols[i]}'
         ohe = OneHotEncoder(sparse=True, handle_unknown='ignore')
         tmp = ohe.fit_transform(tmp.values.reshape(-1, 1))

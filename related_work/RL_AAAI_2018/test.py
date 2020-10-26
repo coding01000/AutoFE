@@ -12,7 +12,7 @@ from scipy.stats import pearsonr
 from sklearn import preprocessing
 from scipy import sparse
 import random
-from related_work.RL_AAAI_2018.agent.agent import  DQNAgent
+from related_work.RL_AAAI_2018.agent.agent import DQNAgent
 import torch
 
 

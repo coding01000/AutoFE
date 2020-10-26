@@ -31,7 +31,8 @@ import torch
 import torch.nn.functional as F
 from PPO import Memory, PPO
 from environment.HousePriceEnv import HousePriceEnv
-device = torch.device("cpu")     # "cuda:0" if torch.cuda.is_available() else "cpu"
+
+device = torch.device("cpu")  # "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 def main():

@@ -8,7 +8,7 @@ from related_work.Explorekit.rank.rank_candidate import rank_candidate
 if __name__ == '__main__':
     original_dataset, label = dataset.get_amazon()
     # print(original_dataset['MGR_ID'].name)
-    maxIterations = 10
+    maxIterations = 100
     threshold_w = 0.1
 
     dataset, candidate = init_dataset_and_candidate_features(original_dataset)
