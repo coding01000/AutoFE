@@ -29,7 +29,6 @@ from torch.nn.utils import clip_grad_norm_
 import torch.optim as optim
 import torch
 import torch.nn.functional as F
-from transform_function.transform_function import transform_list
 
 device = torch.device("cpu")     # "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -162,9 +161,8 @@ class Action(object):
     def __init__(self, data, bounds):
         self.data = data
         self.feature_nums = data.shape[1]
+        self.action_num = 2  # 处理方式数目
         self.combinations = list(combinations([i for i in range(self.feature_nums)], 2))  # 特征组合
-        self.transform_list = transform_list
-        self.action_num = len(transform_list)  # 处理方式数目
         self.action_dim = self.feature_nums * self.action_num + len(self.combinations)
         self.actions = [i for i in range(self.action_dim)]  # 动态搜索空间
         # self.selected = [] #所有已经处理过的action
@@ -199,7 +197,12 @@ class Action(object):
         if _action not in self.processed:
             if not is_combinations:
                 column_name = self.data.columns[action[0]]
-                tmp = self.transform_list[action[1]](self.data[[column_name]])
+                if action[1] == 0:
+                    tmp = (self.data[[column_name]] + 1).apply(np.log)
+                    tmp = scipy.sparse.csr_matrix(tmp)
+                elif action[1] == 1:
+                    ohe = OneHotEncoder(sparse=True, dtype=np.float32, handle_unknown='ignore')
+                    tmp = ohe.fit_transform(self.data[[column_name]])
             else:
                 c1 = self.data.columns[action[0]]
                 c2 = self.data.columns[action[1]]
@@ -284,7 +287,7 @@ class AmazonEmployeeEvn(object):
 
 def main():
     ############## Hyperparameters ##############
-    env_name = "amazon_more_transform"
+    env_name = "amazon_test"
     # creating environment
     env = AmazonEmployeeEvn(15)
     state_dim = env.state_dim
@@ -311,8 +314,8 @@ def main():
     memory = Memory()
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
 
-    # ppo.policy.load_state_dict(torch.load('./model/PPO_amazon_test.pth'))
-    # ppo.policy_old.load_state_dict(torch.load('./model/PPO_amazon_test.pth'))
+    ppo.policy.load_state_dict(torch.load('./PPO_amazon_test.pth'))
+    ppo.policy_old.load_state_dict(torch.load('./PPO_amazon_test.pth'))
 
     print(lr, betas)
 
@@ -354,16 +357,16 @@ def main():
         avg_length += t
 
         # stop training if avg_reward > solved_reward
-        # if running_reward > (log_interval * solved_reward):
-        #     print("########## Solved! ##########")
-        #     torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-        #     break
+        if running_reward > (log_interval * solved_reward):
+            print("########## Solved! ##########")
+            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
+            break
 
         # logging
         if i_episode % log_interval == 0:
             avg_length = (avg_length / log_interval)
             running_reward = ((running_reward / log_interval))
-            torch.save(ppo.policy.state_dict(), './model/PPO_{}.pth'.format(env_name))
+            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
             torch.save(i_episode, './PPO_{}.pth'.format('nn'))
             os.system('clear')
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
@@ -371,5 +374,4 @@ def main():
             avg_length = 0
 
 
-if __name__ == '__main__':
-    main()
+main()

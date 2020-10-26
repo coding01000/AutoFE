@@ -5,6 +5,7 @@ import scipy
 from scipy import sparse
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
+from itertools import combinations
 from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import pearsonr
 import random
@@ -29,6 +30,10 @@ class Action(object):
             lambda x: x.apply(np.sin),
             lambda x: x.apply(np.cos),
             lambda x: x.apply(np.tanh),
+            lambda x1, x2: x1 - x2,
+            lambda x1, x2: x1 + x2,
+            lambda x1, x2: x1 * x2,
+            lambda x1, x2: x1 / x2,
         ]
         self.action_dim = len(self.processing)
 
@@ -41,17 +46,31 @@ class Action(object):
 
         df = self.data
         columns = df.columns
-        for i in columns:
-            tmp1: pd.DataFrame = self.processing[action](df[[i]])
-            tmp1 = tmp1.replace([np.inf, -np.inf], np.nan)
-            if tmp1.isna().any().any():
-                return True
-            new_col_name = f'{i}_{action}'
-            tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-            if new_col_name not in columns:
-                if self.feature_selection(tmp2):
-                    df[new_col_name] = tmp1
-                    self.X = tmp2
+        if action < 8:
+            for i in columns:
+                tmp1: pd.DataFrame = self.processing[action](df[[i]])
+                tmp1 = tmp1.replace([np.inf, -np.inf], np.nan)
+                if tmp1.isna().any().any():
+                    return True
+                new_col_name = f'{i}_{action}'
+                tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
+                if new_col_name not in columns:
+                    if self.feature_selection(tmp2):
+                        df[new_col_name] = tmp1
+                        self.X = tmp2
+        else:
+            combs = combinations(columns, 2)
+            for i in combs:
+                tmp1: pd.DataFrame = self.processing[action](df[[i[0]]], df[[i[1]]])
+                tmp1 = tmp1.replace([np.inf, -np.inf], np.nan)
+                if tmp1.isna().any().any():
+                    return True
+                new_col_name = f'{i}_{action}'
+                tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
+                if new_col_name not in columns:
+                    if self.feature_selection(tmp2):
+                        df[new_col_name] = tmp1
+                        self.X = tmp2
         self.base_score = self.get_score(self.X)
 
         return self.is_done()

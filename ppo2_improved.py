@@ -66,17 +66,7 @@ class ActorCritic(nn.Module):
             nn.Softmax(dim=-1)
         )
 
-        self.feature1_action_layer = nn.Sequential(
-            # nn.Linear(state_dim + transform_dim, n_latent_var),
-            nn.Linear(state_dim + 1, n_latent_var),
-            nn.Tanh(),
-            nn.Linear(n_latent_var, n_latent_var),
-            nn.Tanh(),
-            nn.Linear(n_latent_var, feature_dim),
-            nn.Softmax(dim=-1)
-        )
-
-        self.feature2_action_layer = nn.Sequential(
+        self.feature_action_layer = nn.Sequential(
             # nn.Linear(state_dim + transform_dim, n_latent_var),
             nn.Linear(state_dim + 1, n_latent_var),
             nn.Tanh(),
@@ -111,7 +101,7 @@ class ActorCritic(nn.Module):
         state = torch.cat([state, tmp])
 
         if transform < self.transform_dim - 1:
-            feature_probs = self.feature1_action_layer(state)
+            feature_probs = self.feature_action_layer(state)
             f_dist = Categorical(feature_probs)
             feature = f_dist.sample()
             action = transform * self.feature_dim + feature

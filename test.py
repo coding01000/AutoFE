@@ -4,9 +4,11 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import sklearn.metrics as metrics
 from sklearn.preprocessing import LabelEncoder
-import sys
-
-print(-sys.maxsize - 1)
+a = [
+    lambda x, y: x - y,
+    lambda x, y, c: x - y - c
+]
+print(a[0](1, 2))
 
 
 
