@@ -317,7 +317,7 @@ class DQNAgent:
 
             state = next_state
             score += reward
-            print(frame_idx, reward, action, done, self.env.action_seq)
+            print(frame_idx, reward, action, done)
 
             # PER: increase beta
             fraction = min(frame_idx / num_frames, 1.0)

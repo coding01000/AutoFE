@@ -1,5 +1,6 @@
 import sys
 sys.path.append('C:\\Users\\ZFY\\PycharmProjects\\AutoFE')
+sys.path.append('/Users/mac/PycharmProjects/AutoFE')
 sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
 from related_work.RL_AAAI_2018.env.TitanicEnv import TitanicEnv
 from related_work.RL_AAAI_2018.agent.agent import DQNAgent
