@@ -189,7 +189,7 @@ class Action(object):
             action[0] = self.combinations[_action - self.feature_nums * self.action_num - 1][0]
             action[1] = self.combinations[_action - self.feature_nums * self.action_num - 1][1]
 
-        print(is_combinations, '..............', _action, '---------', action)
+        print(is_combinations, '..............', _action, f'---------[{action[0]}, {action[1]}], ')
 
         if _action not in self.actions:
             return True
@@ -284,9 +284,9 @@ class AmazonEmployeeEvn(object):
 
 def main():
     ############## Hyperparameters ##############
-    env_name = "amazon_more_transform"
+    env_name = "amazon_more_transform_20"
     # creating environment
-    env = AmazonEmployeeEvn(15)
+    env = AmazonEmployeeEvn(20)
     state_dim = env.state_dim
     action_dim = env.action.action_dim
     render = False
@@ -311,8 +311,8 @@ def main():
     memory = Memory()
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
 
-    # ppo.policy.load_state_dict(torch.load('./model/PPO_amazon_test.pth'))
-    # ppo.policy_old.load_state_dict(torch.load('./model/PPO_amazon_test.pth'))
+    ppo.policy.load_state_dict(torch.load('./model/PPO_amazon_more_transform.pth'))
+    ppo.policy_old.load_state_dict(torch.load('./model/PPO_amazon_more_transform.pth'))
 
     print(lr, betas)
 
@@ -372,4 +372,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    print(AmazonEmployeeEvn(15).base_score)

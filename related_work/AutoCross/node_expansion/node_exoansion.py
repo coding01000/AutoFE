@@ -37,6 +37,10 @@ def expanded_root_node(original_data: pd.DataFrame):
         ohe = OneHotEncoder(sparse=True, handle_unknown='ignore')
         tmp = ohe.fit_transform(tmp.values.reshape(-1, 1))
         expand_set[name] = tmp
+    for col in columns:
+        ohe = OneHotEncoder(sparse=True, handle_unknown='ignore')
+        tmp = ohe.fit_transform(df[[col]])
+        expand_set[name] = tmp
     return expand_set
 
 

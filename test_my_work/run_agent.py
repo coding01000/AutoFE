@@ -1,50 +1,20 @@
 # -*- coding: utf-8 -*-
-
-import numpy as np
-import scipy
-import gc
-import pandas as pd
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-from sklearn import metrics
 import os
-from typing import Dict, List, Tuple
-from itertools import combinations, permutations
-from sklearn import linear_model
-import random
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.model_selection import cross_validate
-
-from typing import Deque, Dict, List, Tuple
-from collections import deque
-import math
-
-from catboost.datasets import amazon
 import torch
-import torch.nn as nn
-from torch.distributions import Categorical
-from torch.nn.utils import clip_grad_norm_
-import torch.optim as optim
-import torch
-import torch.nn.functional as F
-from PPO import Memory, PPO
-from environment.HousePriceEnv import HousePriceEnv
+from utils.PPO import Memory, PPO
 
 device = torch.device("cpu")  # "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
-def main():
+def run(env, env_name, load=False):
     ############## Hyperparameters ##############
-    env_name = "HousePrice"
+    env_name = env_name
     # creating environment
-    env = HousePriceEnv(20)
+    env = env
     state_dim = env.state_dim
     action_dim = env.action.action_dim
     render = False
-    solved_reward = 300  # stop training if avg_reward > solved_reward
-    log_interval = 20  # print avg reward in the interval
+    log_interval = 200  # print avg reward in the interval
     max_episodes = 500000  # max training episodes
     max_timesteps = 300  # max timesteps in one episode
     n_latent_var = 64  # number of variables in hidden layer
@@ -64,8 +34,9 @@ def main():
     memory = Memory()
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
 
-    # ppo.policy.load_state_dict(torch.load('./model/PPO_HousePriceEnv.pth'))
-    # ppo.policy_old.load_state_dict(torch.load('./model/PPO_HousePriceEnv.pth'))
+    if load:
+        ppo.policy.load_state_dict(torch.load(f'./model/{env_name}.pth'))
+        ppo.policy_old.load_state_dict(torch.load(f'./model/{env_name}.pth'))
 
     print(lr, betas)
 
@@ -116,12 +87,9 @@ def main():
         if i_episode % log_interval == 0:
             avg_length = (avg_length / log_interval)
             running_reward = ((running_reward / log_interval))
-            torch.save(ppo.policy.state_dict(), './model/PPO_{}.pth'.format(env_name))
-            torch.save(i_episode, './model/PPO_{}.pth'.format('nn'))
+            torch.save(ppo.policy.state_dict(), './model/{}.pth'.format(env_name))
+            # torch.save(i_episode, './model/PPO_{}.pth'.format('nn'))
             os.system('clear')
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
             running_reward = 0
             avg_length = 0
-
-
-main()

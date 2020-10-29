@@ -1,42 +1,13 @@
-# -*- coding: utf-8 -*-
-
 import numpy as np
 import scipy
-import gc
-import pandas as pd
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-from sklearn import metrics
-import os
-from typing import Dict, List, Tuple
-from itertools import combinations, permutations
-from sklearn import linear_model
-import random
-import matplotlib.pyplot as plt
+from itertools import combinations
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import cross_validate
-from sklearn import tree
-
-from typing import Deque, Dict, List, Tuple
-from collections import deque
-import math
-
-from catboost.datasets import amazon
-import torch
-import torch.nn as nn
-from torch.distributions import Categorical
-from torch.nn.utils import clip_grad_norm_
-import torch.optim as optim
-import torch
-import dataprocessing.house_price_data as hpd
-import torch.nn.functional as F
-import sys
+from dataprocessing import dataset
 
 from transform_function.transform_function import transform_list
 from utils import init_seed
-
-device = torch.device("cpu")     # "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 class Action(object):
@@ -72,8 +43,8 @@ class Action(object):
 
         print(is_combinations, '..............', _action, f'---------[{action[0]}, {action[1]}], ')
 
-        # if _action not in self.actions:
-        #     return True
+        if _action not in self.actions:
+            return True
 
         self.episode_done.append(_action)
 
@@ -88,13 +59,13 @@ class Action(object):
                 ohe = OneHotEncoder(sparse=True, dtype=np.float32, handle_unknown='ignore')
                 tmp = ohe.fit_transform(tmp.values.reshape(-1, 1))
             self.processed[_action] = tmp
-        # if is_combinations:
-        # self.actions.remove(_action)
-        # else:
-        #     start = action[0] * self.action_num
-        #     end = start + self.action_num
-        #     for i in range(start, end):
-        #         self.actions.remove(i)
+        if is_combinations:
+            self.actions.remove(_action)
+        else:
+            start = action[0] * self.action_num
+            end = start + self.action_num
+            for i in range(start, end):
+                self.actions.remove(i)
         return self.isDone()
 
     def isDone(self):
@@ -109,12 +80,11 @@ class Action(object):
         return x
 
 
-class HousePriceEnv(object):
+class AmazonEnv(object):
     def __init__(self, bounds):
-        # data, _ = amazon()
-        data, self.label = hpd.get_data(False)
+        data, self.label = dataset.get_amazon(False)
         self.action = Action(data, bounds)
-        self.base_score = self.rmse_score(data.values)
+        self.base_score = self.auc_score(data.values)
         self.state_dim = self.action.action_dim
         self.state = np.zeros(self.state_dim)
         self.one_episode = []  # 存储action执行序列
@@ -138,18 +108,26 @@ class HousePriceEnv(object):
 
     def _reward(self):
         if self.action.ptr < self.action.bounds:
-            return -sys.maxsize - 1
+            return -10
         one_episode = "".join(map(str, self.one_episode))
         if one_episode in self.episodes:
             return self.episodes[one_episode]
-        self.episodes[one_episode] = (self.rmse_score(self.action.data_sets()) - self.base_score)
+        self.episodes[one_episode] = self.auc_score(self.action.data_sets()) - self.base_score
         return self.episodes[one_episode]
 
-    def rmse_score(self, x):
-        model = tree.DecisionTreeRegressor(random_state=init_seed.get_seed())
-        # model = linear_model.LinearRegression()
+    def auc_score(self, x):
+        model = LogisticRegression(
+            penalty='l2',
+            C=1.0,
+            fit_intercept=True,
+            # random_state=432,
+            solver='liblinear',
+            max_iter=1000,
+            random_state=init_seed.get_seed(),
+            # n_jobs=-1,
+        )
         y = self.label
-        stats = cross_validate(model, x, y, groups=None, scoring='r2',
+        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 

@@ -1,13 +1,17 @@
-from catboost.datasets import amazon
-from related_work.AutoCross.feature_wise.model_train import get_class_predict, evaluation_with_auc
+import sys
+sys.path.append('C:\\Users\\ZFY\\PycharmProjects\\AutoFE')
+sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
+
+from utils.init_seed import init_seed
 from related_work.AutoCross.beam_search.beam_search import search
-from related_work.AutoCross.dataset.dataset import get_amazon
-from related_work.AutoCross.feature_wise.model_train import evaluation_with_auc
+from related_work.AutoCross.feature_wise.model_train import evaluation_with_auc, evaluation_with_r2
 import scipy
-import pandas as pd
+# from dataprocessing.house_price_data import get_data
+from dataprocessing import dataset
 
 if __name__ == '__main__':
-    train, label = get_amazon()
+    init_seed()
+    train, label = dataset.get_titanic(False)
     chosen_list = search(train, label, 15)
     print(chosen_list.keys())
 

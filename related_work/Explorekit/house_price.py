@@ -1,15 +1,20 @@
 import sys
-# sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
+
+sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
 sys.path.append('C:\\Users\\ZFY\\PycharmProjects\\AutoFE')
 from related_work.Explorekit.dataset import dataset
+from utils.init_seed import init_seed
 from related_work.Explorekit.generater.generate_candidates import \
     generate_candidate_features_from_binary_group_by_transform, init_dataset_and_candidate_features
 from related_work.Explorekit.evaluation.evalution import evaluate_a_regress_dataset
-from related_work.Explorekit.rank.rank_candidate import rank_candidate
+from related_work.Explorekit.rank.rank_candidate import rank_regress_candidate
 from dataprocessing.house_price_data import get_data
+import warnings
+warnings.filterwarnings('ignore')
 
 
 if __name__ == '__main__':
+    init_seed()
     original_dataset, label = get_data(False)
     # print(original_dataset['MGR_ID'].name)
     maxIterations = 10
@@ -20,10 +25,10 @@ if __name__ == '__main__':
     print(f'init success. dataset shape {dataset.shape}, candidate shape {candidate.shape}, '
           f'original data shape{original_dataset.shape}')
     for i in range(maxIterations):
-        rank_list = rank_candidate(original_dataset, candidate, label)
-        print(f'iteration {i}.............. {rank_list[0]}')
+        rank_list = rank_regress_candidate(original_dataset, candidate, label)
         chosen_candidate_name = rank_list[0][0]
         improvement = rank_list[0][1]
+        print(f'iteration {i}.............. {chosen_candidate_name}..........{improvement}')
         if improvement > threshold_w:
             original_dataset[chosen_candidate_name] = candidate[chosen_candidate_name]
             dataset[chosen_candidate_name] = candidate[chosen_candidate_name]
@@ -33,5 +38,5 @@ if __name__ == '__main__':
         else:
             break
 
-    print(f'score:{evaluate_a_dataset(original_dataset, label)}')
+    print(f'score:{evaluate_a_regress_dataset(original_dataset, label)}')
     print(original_dataset.columns)

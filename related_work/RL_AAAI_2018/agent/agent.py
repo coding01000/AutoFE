@@ -9,9 +9,11 @@ from IPython.display import clear_output
 import random
 import matplotlib.pyplot as plt
 from related_work.RL_AAAI_2018.agent.segment_tree import MinSegmentTree, SumSegmentTree
+import os
 
-print(torch.cuda.is_available())
-torch.cuda.get_device_name(0)
+
+# print(torch.cuda.is_available())
+# torch.cuda.get_device_name(0)
 
 
 class ReplayBuffer:
@@ -27,12 +29,12 @@ class ReplayBuffer:
         self.ptr, self.size, = 0, 0
 
     def store(
-        self,
-        obs: np.ndarray,
-        act: np.ndarray,
-        next_obs: np.ndarray,
-        done:  bool,
-        rew: float,
+            self,
+            obs: np.ndarray,
+            act: np.ndarray,
+            next_obs: np.ndarray,
+            done: bool,
+            rew: float,
     ):
         self.obs_buf[self.ptr] = obs
         self.next_obs_buf[self.ptr] = next_obs
@@ -190,6 +192,8 @@ class Network(nn.Module):
 
 class DQNAgent:
     def __init__(self, env, memory_size, batch_size, target_update, epsilon_decay,
+                 load_name=None,
+                 is_load=False,
                  max_epsilon: float = 1.0,
                  min_epsilon: float = 0.1,
                  gamma: float = 0.99,
@@ -202,6 +206,7 @@ class DQNAgent:
         action_dim = env.action.action_dim
 
         self.env = env
+        self.load_name = load_name
         self.memory = ReplayBuffer(obs_dim, memory_size, batch_size)
         self.batch_size = batch_size
         self.epsilon = max_epsilon
@@ -211,10 +216,9 @@ class DQNAgent:
         self.target_update = target_update
         self.gamma = gamma
         self.frame_ptr = 1
-
         # device: cpu / gpu
         self.device = torch.device(
-             "cpu" # "cuda" if torch.cuda.is_available() else
+            "cpu"  # "cuda" if torch.cuda.is_available() else
         )
         print(self.device)
 
@@ -228,7 +232,8 @@ class DQNAgent:
 
         # networks: dqn, dqn_target
         self.dqn = Network(obs_dim, action_dim).to(self.device)
-        # self.dqn.load_state_dict(torch.load('./model/agent_more_transform.pth'))
+        if is_load:
+            self.dqn.load_state_dict(torch.load(f'./model/RL2018_{load_name}.pth'))
         self.dqn_target = Network(obs_dim, action_dim).to(self.device)
         self.dqn_target.load_state_dict(self.dqn.state_dict())
         self.dqn_target.eval()
@@ -238,7 +243,7 @@ class DQNAgent:
 
         # transition to store in memory
         self.transition = list()
-        self.transitions = list()
+        # self.transitions = list()
 
         # mode: train / test
         self.is_test = False
@@ -312,7 +317,7 @@ class DQNAgent:
 
             state = next_state
             score += reward
-            print(frame_idx, reward)
+            print(frame_idx, reward, action, done, self.env.action_seq)
 
             # PER: increase beta
             fraction = min(frame_idx / num_frames, 1.0)
@@ -346,9 +351,10 @@ class DQNAgent:
 
             # plotting
             if frame_idx % plotting_interval == 0:
-                self._plot(frame_idx, scores, losses, epsilons)
+                # self._plot(frame_idx, scores, losses, epsilons)
+                os.system('clear')
                 self.frame_ptr = frame_idx
-                torch.save(self.dqn_target.state_dict(), './model/agent_more_transform.pth')
+                torch.save(self.dqn_target.state_dict(), f'./model/RL2018_{self.load_name}.pth')
                 # self.save('./model/agent.pth')
 
         # self.env.close()
@@ -414,7 +420,7 @@ class DQNAgent:
         clear_output(True)
         plt.figure(figsize=(20, 5))
         plt.subplot(131)
-        plt.title('frame %s. score: %s' % (frame_idx, np.mean(scores[-10:])))
+        plt.title(f'frame %s. %s-- score: %s' % (frame_idx, self.load_name, np.mean(scores[-10:])))
         plt.plot(scores)
         plt.subplot(132)
         plt.title('loss')

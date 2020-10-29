@@ -17,18 +17,18 @@ import scipy
 import gc
 from dataprocessing.house_price_data import get_data
 
-# train, test = amazon()
-# train_sets = None
-# test_sets = None
-#
-#
-# target = "ACTION"
-# col4train = [x for x in train.columns if x != target]
-# y = train["ACTION"].values
-# train = train[col4train]
-# submit = pd.DataFrame()
-# submit["Id"] = test["id"]
-# test = test[col4train]
+train, test = amazon()
+train_sets = None
+test_sets = None
+
+
+target = "ACTION"
+col4train = [x for x in train.columns if x != target]
+y = train["ACTION"].values
+train = train[col4train]
+submit = pd.DataFrame()
+submit["Id"] = test["id"]
+test = test[col4train]
 
 
 # train = pd.read_csv('dataset/Bikeshare/train_unt.csv')
@@ -69,17 +69,17 @@ from dataprocessing.house_price_data import get_data
 #
 # train = train.fillna(0)
 # test = test.fillna(0)
-train, test = get_data(True)
-train_sets = None
-test_sets = None
-y = train["SalePrice"].apply(np.log1p).values
-submit = pd.DataFrame()
-submit["Id"] = test["Id"]
-print(submit.shape)
-train.drop('SalePrice', axis=1, inplace=True)
-train.drop('Id', axis=1, inplace=True)
-test.drop('Id', axis=1, inplace=True)
-col4train = train.columns
+# train, test = get_data(True)
+# train_sets = None
+# test_sets = None
+# y = train["SalePrice"].apply(np.log1p).values
+# submit = pd.DataFrame()
+# submit["Id"] = test["Id"]
+# print(submit.shape)
+# train.drop('SalePrice', axis=1, inplace=True)
+# train.drop('Id', axis=1, inplace=True)
+# test.drop('Id', axis=1, inplace=True)
+# col4train = train.columns
 
 
 def cos(column_name):
@@ -133,8 +133,7 @@ def comb(n1, n2):
 # combs = [[19, 53], [28, 73], [0, 28], [4, 61], [0, 46], [42, 59], [37, 64], [60, 64], [41, 58], [34, 69], [44, 57],
 #          [25, 43], [47, 49], [30, 76], [36, 74], [17, 42], [32, 60], [6, 33], [60, 66]]
 combs = [
-    [39, 63], [10, 41], [21, 70], [28, 54], [53, 67], [31, 66], [17, 74], [52, 62], [53, 57], [33, 42], [24, 28],
-    [0, 43], [22, 37], [39, 58], [2, 25], [35, 61], [13, 41], [44, 67], [26, 50], [1, 34]
+    [0, 7], [3, 7], [5, 7], [2, 5], [4, 6], [1, 7], [0, 8], [2, 6], [0, 3], [0, 1], [4, 5], [2, 8], [0, 6], [5, 8], [1, 5],
 ]
 for i in combs:
     comb(i[0], i[1])
@@ -152,32 +151,30 @@ for i in range(9):
 # train.to_csv("train.csv", index=False)
 # test.to_csv("test.csv", index=False)
 
-# model = LogisticRegression(
-#     penalty='l2',
-#     C=1.0,
-#     fit_intercept=True,
-#     random_state=432,
-#     solver='liblinear',
-#     max_iter=1000,
-#     # n_jobs=-1,
-# )
+model = LogisticRegression(
+    penalty='l2',
+    C=1.0,
+    fit_intercept=True,
+    random_state=432,
+    solver='liblinear',
+    max_iter=1000,
+    # n_jobs=-1,
+)
 
 from sklearn import tree
-model = tree.DecisionTreeRegressor()
+# model = tree.DecisionTreeRegressor()
 # from sklearn import linear_model
 # model = linear_model.SGDRegressor()
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 # model = GradientBoostingRegressor()
 
-del train
-del test
-gc.collect()
+
 print('train...')
 model.fit(train_sets, y)
-# predictions = model.predict_proba(test_sets)[:, 1]
-predictions = model.predict(test_sets)
-predictions = np.expm1(predictions)
-print(predictions)
-submit["SalePrice"] = predictions
+predictions = model.predict_proba(test_sets)[:, 1]
+# predictions = model.predict(test_sets)
+# predictions = np.expm1(predictions)
+# print(predictions)
+submit["ACTION"] = predictions
 
 submit.to_csv("submission.csv", index=False)

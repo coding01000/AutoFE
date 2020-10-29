@@ -1,38 +1,42 @@
 C:\Users\ZFY\Anaconda3\python.exe C:/Users/ZFY/PycharmProjects/AutoFE/related_work/Explorekit/test.py
 init success. dataset shape (32769, 27), candidate shape (32769, 1927), original data shape(32769, 9)
-rank: 100%|█████████▉| 1926/1927 [8:15:20<00:00,  2.18it/s]iteration 0.............. ('ROLE_FAMILY_uniform_discretizer_RESOURCE_group_by_mean', 6.601732634504529)
-rank: 100%|██████████| 1927/1927 [8:15:20<00:00, 15.42s/it]
-rank: 100%|██████████| 2007/2007 [23:36<00:00,  1.42it/s]
+rank: 100%|█████████▉| 1926/1927 [16:48<00:00,  2.30it/s]iteration 0.............. ('ROLE_FAMILY_uniform_discretizer_RESOURCE_group_by_mean', 6.601732634504529)
+rank: 100%|██████████| 1927/1927 [16:48<00:00,  1.91it/s]
+rank: 100%|██████████| 2007/2007 [23:29<00:00,  1.42it/s]
 iteration 1.............. ('MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max', 1.568260789058968)
-rank: 100%|█████████▉| 2089/2090 [30:40<00:00,  1.20it/s]iteration 2.............. ('ROLE_ROLLUP_1_uniform_discretizer_ROLE_ROLLUP_1_group_by_mean', 0.7627133219265829)
-rank: 100%|██████████| 2090/2090 [30:41<00:00,  1.14it/s]
-rank: 100%|██████████| 2176/2176 [1:01:11<00:00,  1.69s/it]
-iteration 3.............. ('ROLE_ROLLUP_1_uniform_discretizer_ROLE_TITLE_group_by_max', 0.674579772608709)
-rank: 100%|██████████| 2265/2265 [1:18:35<00:00,  2.08s/it]
-iteration 4.............. ('ROLE_FAMILY_uniform_discretizer_ROLE_FAMILY_group_by_mean', 0.4637874705652081)
-rank: 100%|██████████| 2357/2357 [1:35:51<00:00,  2.44s/it]
+rank: 100%|██████████| 2090/2090 [29:25<00:00,  1.18it/s]
+iteration 2.............. ('ROLE_ROLLUP_1_uniform_discretizer_ROLE_ROLLUP_1_group_by_mean', 0.7627133219265829)
+rank: 100%|█████████▉| 2175/2176 [58:53<00:01,  1.67s/it]iteration 3.............. ('ROLE_ROLLUP_1_uniform_discretizer_ROLE_TITLE_group_by_max', 0.674579772608709)
+rank: 100%|██████████| 2176/2176 [58:55<00:00,  1.62s/it]
+rank: 100%|█████████▉| 2264/2265 [1:14:20<00:01,  1.99s/it]iteration 4.............. ('ROLE_FAMILY_uniform_discretizer_ROLE_FAMILY_group_by_mean', 0.4637874705652081)
+rank: 100%|██████████| 2265/2265 [1:14:22<00:00,  1.97s/it]
+rank: 100%|██████████| 2357/2357 [1:27:32<00:00,  2.23s/it]
 iteration 5.............. ('RESOURCE_uniform_discretizer_ROLE_FAMILY_uniform_discretizer_RESOURCE_group_by_mean_group_by_min', 0.5061850373719636)
-rank: 100%|█████████▉| 2451/2452 [1:51:57<00:02,  2.61s/it]iteration 6.............. ('MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max_ROLE_ROLLUP_1_uniform_discretizer_ROLE_ROLLUP_1_group_by_mean_group_by_max', 0.5573878624052568)
-rank: 100%|██████████| 2452/2452 [1:51:59<00:00,  2.74s/it]
-rank: 100%|██████████| 2550/2550 [2:21:27<00:00,  3.33s/it]
-iteration 7.............. ('ROLE_FAMILY_DESC_uniform_discretizer_ROLE_ROLLUP_1_uniform_discretizer_ROLE_TITLE_group_by_max_group_by_min', 0.40593590436098737)
-rank: 100%|█████████▉| 2650/2651 [2:53:38<00:03,  3.72s/it]iteration 8.............. ('ROLE_FAMILY_DESC_uniform_discretizer_MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max_group_by_min', 0.46330134860560435)
-rank: 100%|██████████| 2651/2651 [2:53:42<00:00,  3.93s/it]
-rank: 100%|█████████▉| 2754/2755 [3:01:54<00:03,  3.97s/it]iteration 9.............. ('ROLE_FAMILY_DESC_uniform_discretizer_ROLE_FAMILY_group_by_mean', 0.5276564912283703)
-rank: 100%|██████████| 2755/2755 [3:01:58<00:00,  3.96s/it]
-score:64.78249496437127
-Index(['RESOURCE', 'MGR_ID', 'ROLE_ROLLUP_1', 'ROLE_ROLLUP_2', 'ROLE_DEPTNAME',
-       'ROLE_TITLE', 'ROLE_FAMILY_DESC', 'ROLE_FAMILY', 'ROLE_CODE',
-       'ROLE_FAMILY_uniform_discretizer_RESOURCE_group_by_mean',
-       'MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max',
-       'ROLE_ROLLUP_1_uniform_discretizer_ROLE_ROLLUP_1_group_by_mean',
-       'ROLE_ROLLUP_1_uniform_discretizer_ROLE_TITLE_group_by_max',
-       'ROLE_FAMILY_uniform_discretizer_ROLE_FAMILY_group_by_mean',
-       'RESOURCE_uniform_discretizer_ROLE_FAMILY_uniform_discretizer_RESOURCE_group_by_mean_group_by_min',
-       'MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max_ROLE_ROLLUP_1_uniform_discretizer_ROLE_ROLLUP_1_group_by_mean_group_by_max',
-       'ROLE_FAMILY_DESC_uniform_discretizer_ROLE_ROLLUP_1_uniform_discretizer_ROLE_TITLE_group_by_max_group_by_min',
-       'ROLE_FAMILY_DESC_uniform_discretizer_MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max_group_by_min',
-       'ROLE_FAMILY_DESC_uniform_discretizer_ROLE_FAMILY_group_by_mean'],
-      dtype='object')
-
-Process finished with exit code 0
+rank: 100%|██████████| 2452/2452 [1:43:01<00:00,  2.52s/it]
+iteration 6.............. ('MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max_ROLE_ROLLUP_1_uniform_discretizer_ROLE_ROLLUP_1_group_by_mean_group_by_max', 0.5573878624052568)
+rank: 100%|█████████▉| 2549/2550 [2:08:09<00:03,  3.13s/it]iteration 7.............. ('ROLE_FAMILY_DESC_uniform_discretizer_ROLE_ROLLUP_1_uniform_discretizer_ROLE_TITLE_group_by_max_group_by_min', 0.40593590436098737)
+rank: 100%|██████████| 2550/2550 [2:08:12<00:00,  3.02s/it]
+rank: 100%|██████████| 2651/2651 [2:30:38<00:00,  3.41s/it]
+iteration 8.............. ('ROLE_FAMILY_DESC_uniform_discretizer_MGR_ID_uniform_discretizer_ROLE_ROLLUP_2_group_by_max_group_by_min', 0.46330134860560435)
+rank: 100%|█████████▉| 2754/2755 [2:46:15<00:03,  3.59s/it]iteration 9.............. ('ROLE_FAMILY_DESC_uniform_discretizer_ROLE_FAMILY_group_by_mean', 0.5276564912283703)
+rank: 100%|██████████| 2755/2755 [2:46:19<00:00,  3.62s/it]
+rank: 100%|█████████▉| 2861/2862 [3:14:03<00:04,  4.41s/it]iteration 10.............. ('RESOURCE_uniform_discretizer_ROLE_FAMILY_uniform_discretizer_RESOURCE_group_by_mean_group_by_mean', 0.6548351750907244)
+rank: 100%|██████████| 2862/2862 [3:14:08<00:00,  4.07s/it]
+rank: 100%|██████████| 2972/2972 [3:35:51<00:00,  4.36s/it]
+iteration 11.............. ('ROLE_TITLE_uniform_discretizer_ROLE_FAMILY_DESC_group_by_max', 0.3623433147611763)
+rank: 100%|██████████| 3085/3085 [4:11:18<00:00,  4.89s/it]
+iteration 12.............. ('ROLE_DEPTNAME_ROLE_FAMILY_DESC_scale_division', 0.2786133467112677)
+rank: 100%|██████████| 3254/3254 [5:58:03<00:00,  6.60s/it]
+iteration 13.............. ('ROLE_TITLE_scale_ROLE_DEPTNAME_ROLE_FAMILY_DESC_scale_division_multiplication', 0.321475334775954)
+rank: 100%|██████████| 3429/3429 [7:06:37<00:00,  7.47s/it]
+iteration 14.............. ('MGR_ID_uniform_discretizer_ROLE_ROLLUP_1_group_by_mean', 0.25213311764193236)
+rank: 100%|█████████▉| 3550/3551 [7:23:12<00:06,  6.54s/it]iteration 15.............. ('ROLE_DEPTNAME_scale_ROLE_FAMILY_multiplication', 0.20505842713157563)
+rank: 100%|██████████| 3551/3551 [7:23:19<00:00,  7.49s/it]
+rank: 100%|█████████▉| 3734/3735 [9:13:56<00:10, 10.03s/it]iteration 16.............. ('ROLE_DEPTNAME_scale_ROLE_FAMILY_multiplication_ROLE_TITLE_scale_ROLE_DEPTNAME_ROLE_FAMILY_DESC_scale_division_multiplication_division', 0.3557061795993093)
+rank: 100%|██████████| 3735/3735 [9:14:07<00:00,  8.90s/it]
+rank: 100%|██████████| 3925/3925 [14:08:22<00:00, 12.97s/it]
+iteration 17.............. ('ROLE_DEPTNAME_uniform_discretizer_ROLE_DEPTNAME_scale_ROLE_FAMILY_multiplication_group_by_min', 0.3155592096581472)
+rank: 100%|██████████| 4056/4056 [18:09:08<00:00, 16.11s/it]
+iteration 18.............. ('ROLE_ROLLUP_2_scale_ROLE_DEPTNAME_scale_ROLE_FAMILY_multiplication_multiplication', 0.263459773383417)
+rank:  68%|██████▊   | 2896/4255 [13:31:18<5:26:55, 14.43s/it]
+Process finished with exit code -1

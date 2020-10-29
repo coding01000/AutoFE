@@ -1,4 +1,3 @@
-from catboost.datasets import amazon
 import numpy as np
 import pandas as pd
 import scipy
@@ -8,6 +7,8 @@ from sklearn.model_selection import cross_validate
 from itertools import combinations
 from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import pearsonr
+from dataprocessing.house_price_data import get_data
+from sklearn import tree
 import random
 from sklearn import preprocessing
 
@@ -90,32 +91,24 @@ class Action(object):
 
     def feature_selection(self, features):
         score = self.get_score(features)
-        if score - self.base_score > 0.1:
+        if score - self.base_score > 1:
             return True
         return False
 
     def get_score(self, x):
-        model = LogisticRegression(
-            penalty='l2',
-            C=1.0,
-            fit_intercept=True,
-            random_state=init_seed.get_seed(),
-            solver='liblinear',
-            max_iter=1000,
-        )
+        model = tree.DecisionTreeRegressor(random_state=init_seed.get_seed())
         y = self.y
-        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
+        stats = cross_validate(model, x, y, groups=None, scoring='r2',
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 
 
-class AmazonEmployeeEvn(object):
+class HousePriceEnv(object):
     def __init__(self, bounds):
-        data, _ = amazon()
-        self.label = data['ACTION'].values
-        data.drop('ACTION', axis=1, inplace=True)
+        data, label = get_data(False)
+        self.label = label.values
         self.action = Action(data, bounds, self.label)
-        self.base_score = self.auc_score(self.action.X)
+        self.base_score = self.get_score(self.action.X)
         self.state_dim = self.action.action_dim
         self.state = np.zeros(self.state_dim)
         self.have_done = {}
@@ -124,7 +117,7 @@ class AmazonEmployeeEvn(object):
     def reset(self):
         self.state = np.zeros(self.state_dim)
         self.action.reset()
-        self.base_score = self.auc_score(self.action.X)
+        self.base_score = self.get_score(self.action.X)
         self.action_seq = []
         return self.state
 
@@ -145,71 +138,17 @@ class AmazonEmployeeEvn(object):
         return self.state, reward, done
 
     def _reward(self):
-        score = self.auc_score(self.action.data_sets())
+        score = self.get_score(self.action.data_sets())
         reward = score - self.base_score
         self.base_score = max(self.base_score, score)
         return reward
 
-    def auc_score(self, x):
-        model = LogisticRegression(
-            penalty='l2',
-            C=1.0,
-            fit_intercept=True,
-            random_state=init_seed.get_seed(),
-            solver='liblinear',
-            max_iter=1000,
-        )
+    def get_score(self, x):
+        model = tree.DecisionTreeRegressor(random_state=init_seed.get_seed())
         y = self.label
-        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
+        stats = cross_validate(model, x, y, groups=None, scoring='r2',
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 
     def sample(self):
         return random.randint(0, self.action.action_dim - 1)
-
-# if action == 0:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(np.log1p)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i+'_1'] = tmp1
-#             self.X = tmp2
-# elif action == 1:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(np.square)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2
-#         # ohe = OneHotEncoder(sparse=True, dtype=np.float32, handle_unknown='ignore')
-#         # tmp = ohe.fit_transform(df[[i]])
-#         # tmp = scipy.sparse.hstack([self.X, tmp])
-#         # if self.feature_selection(tmp):
-#         #     print(f'action1---------{i}')
-#         #     self.X = tmp
-# elif action == 2:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(np.sqrt)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2
-# elif action == 3:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(preprocessing.scale)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2
-# elif action == 4:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(preprocessing.scale)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2

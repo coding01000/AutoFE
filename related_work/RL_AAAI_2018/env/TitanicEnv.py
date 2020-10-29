@@ -1,3 +1,4 @@
+# sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
 from catboost.datasets import amazon
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import pearsonr
 import random
 from sklearn import preprocessing
-
+from dataprocessing import dataset
 from utils import init_seed
 
 
@@ -109,16 +110,15 @@ class Action(object):
         return stats['test_score'].mean() * 100
 
 
-class AmazonEmployeeEvn(object):
+class TitanicEnv(object):
     def __init__(self, bounds):
-        data, _ = amazon()
-        self.label = data['ACTION'].values
-        data.drop('ACTION', axis=1, inplace=True)
+        data, self.label = dataset.get_titanic(False)
         self.action = Action(data, bounds, self.label)
         self.base_score = self.auc_score(self.action.X)
         self.state_dim = self.action.action_dim
         self.state = np.zeros(self.state_dim)
         self.have_done = {}
+        self.reward = {}
         self.action_seq = []
 
     def reset(self):
@@ -133,14 +133,17 @@ class AmazonEmployeeEvn(object):
         self.action_seq.append(_action)
         actions = str(self.action_seq)
         if actions in self.have_done.keys():
-            done = self.action.is_done()
-            reward = self.have_done[actions]
+            reward = self.reward[actions]
+            done = self.have_done[actions]
             self.state[_action] += 1
             return self.state, reward, done
 
         done = self.action.step(_action)
         reward = self._reward()
-        self.have_done[actions] = reward
+
+        self.have_done[actions] = done
+        self.reward[actions] = reward
+
         self.state[_action] += 1
         return self.state, reward, done
 
@@ -166,50 +169,3 @@ class AmazonEmployeeEvn(object):
 
     def sample(self):
         return random.randint(0, self.action.action_dim - 1)
-
-# if action == 0:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(np.log1p)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i+'_1'] = tmp1
-#             self.X = tmp2
-# elif action == 1:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(np.square)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2
-#         # ohe = OneHotEncoder(sparse=True, dtype=np.float32, handle_unknown='ignore')
-#         # tmp = ohe.fit_transform(df[[i]])
-#         # tmp = scipy.sparse.hstack([self.X, tmp])
-#         # if self.feature_selection(tmp):
-#         #     print(f'action1---------{i}')
-#         #     self.X = tmp
-# elif action == 2:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(np.sqrt)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2
-# elif action == 3:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(preprocessing.scale)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2
-# elif action == 4:
-#     for i in columns:
-#         tmp1 = df[[i]].apply(preprocessing.scale)
-#         tmp2 = scipy.sparse.hstack([self.X, sparse.csr_matrix(tmp1.values)])
-#         if self.feature_selection(tmp2):
-#             print(f'action0---------{i}')
-#             self.data[i + '_1'] = tmp1
-#             self.X = tmp2

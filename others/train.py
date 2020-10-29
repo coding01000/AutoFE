@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import argparse
 import utils
-import mylayer
+from others import mylayer
 
 cfg = {
     "num_epochs": 5,

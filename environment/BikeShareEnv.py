@@ -29,12 +29,12 @@ from torch.distributions import Categorical
 from torch.nn.utils import clip_grad_norm_
 import torch.optim as optim
 import torch
-import dataprocessing.house_price_data as hpd
+from dataprocessing import dataset
 import torch.nn.functional as F
 import sys
+from utils import init_seed
 
 from transform_function.transform_function import transform_list
-from utils import init_seed
 
 device = torch.device("cpu")     # "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -109,10 +109,10 @@ class Action(object):
         return x
 
 
-class HousePriceEnv(object):
+class BikeShareEnv(object):
     def __init__(self, bounds):
         # data, _ = amazon()
-        data, self.label = hpd.get_data(False)
+        data, self.label = dataset.get_bike_share(False)
         self.action = Action(data, bounds)
         self.base_score = self.rmse_score(data.values)
         self.state_dim = self.action.action_dim
