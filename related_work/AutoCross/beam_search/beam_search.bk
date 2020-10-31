@@ -7,8 +7,7 @@ from related_work.AutoCross.feature_wise.model_train import evaluation_with_auc,
 
 
 def search(df: pd.DataFrame, label, expand_depth, kind):
-    # row_label = label
-    chosen_ = None
+    row_label = label
     # init the label to train
     # label = label - get_regress_predict(df.values, label)
     # the list of chosen crossing feature
@@ -21,14 +20,10 @@ def search(df: pd.DataFrame, label, expand_depth, kind):
         # store the score
         prediction = {}
         for set_name in expand_set:
-            if kind == 'class':
-                score = evaluation_with_auc(scipy.sparse.hstack([chosen_, expand_set[set_name]]), label)
-            else:
-                score = evaluation_with_r2(scipy.sparse.hstack([chosen_, expand_set[set_name]]), label)
-            prediction[set_name] = score
+            prediction[set_name] = abs(get_regress_predict(expand_set[set_name], label) - label).sum()
 
         # find the best and unselected features
-        chosen = sorted(prediction.items(), key=lambda item: item[1], reverse=True)[0][0]
+        chosen = sorted(prediction.items(), key=lambda item: item[1])[0][0]
         # for can in candidate:
         #     if can[0] not in chosen_list.keys():
         #         chosen = can[0]
@@ -36,15 +31,20 @@ def search(df: pd.DataFrame, label, expand_depth, kind):
 
         chosen_list[chosen] = expand_set[chosen]
         # update label for the next step to train
-        # label = label - get_regress_predict(expand_set[chosen], label)
+        label = label - get_regress_predict(expand_set[chosen], label)
         # get the expand set: {feature_name: feature}
-        chosen_ = scipy.sparse.hstack([chosen_, expand_set[chosen]])
-        if kind == 'class':
-            print(evaluation_with_auc(chosen_, label))
-        else:
-            print(evaluation_with_r2(chosen_, label))
-
         expand_set = expansion(chosen)
+
+        train = None
+        for i in chosen_list:
+            if train is None:
+                train = chosen_list[i]
+            else:
+                train = scipy.sparse.hstack([train, chosen_list[i]])
+        if kind == 'class':
+            print(evaluation_with_auc(train, row_label))
+        else:
+            print(evaluation_with_r2(train, row_label))
 
         bar.update()
 

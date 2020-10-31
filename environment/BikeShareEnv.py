@@ -22,7 +22,6 @@ from typing import Deque, Dict, List, Tuple
 from collections import deque
 import math
 
-from catboost.datasets import amazon
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical

@@ -12,7 +12,7 @@ from dataprocessing import dataset
 if __name__ == '__main__':
     init_seed()
     train, label = dataset.get_amazon(False)
-    chosen_list = search(train, label, 15)
+    chosen_list = search(train, label, 15, 'class')
     print(chosen_list.keys())
 
     # train = scipy.sparse.csr_matrix(train.values)

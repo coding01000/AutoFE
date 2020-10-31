@@ -1,4 +1,3 @@
-from catboost.datasets import amazon
 import numpy as np
 import torch
 from torch import nn
@@ -351,7 +350,7 @@ class DQNAgent:
 
             # plotting
             if frame_idx % plotting_interval == 0:
-                # self._plot(frame_idx, scores, losses, epsilons)
+                self._plot(frame_idx, scores, losses, epsilons)
                 os.system('clear')
                 self.frame_ptr = frame_idx
                 torch.save(self.dqn_target.state_dict(), f'./model/RL2018_{self.load_name}.pth')

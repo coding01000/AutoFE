@@ -1,5 +1,4 @@
 # sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
-from catboost.datasets import amazon
 import numpy as np
 import pandas as pd
 import scipy

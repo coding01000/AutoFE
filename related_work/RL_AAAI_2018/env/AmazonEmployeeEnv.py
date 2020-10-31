@@ -1,4 +1,3 @@
-from catboost.datasets import amazon
 import numpy as np
 import pandas as pd
 import scipy
@@ -10,6 +9,7 @@ from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import pearsonr
 import random
 from sklearn import preprocessing
+from dataprocessing import dataset
 
 from utils import init_seed
 
@@ -38,14 +38,26 @@ class Action(object):
             lambda x1, x2: x1 / x2,
         ]
         self.action_dim = len(self.processing)
+        self.action_seq = []
+        self.Xs = {}
+        self.datas = {}
 
     def reset(self):
         self.ptr = 0
         self.data = self.row_data.copy()
         self.X = sparse.csr_matrix(self.row_data.values)
         self.base_score = self.get_score(self.X)
+        self.action_seq = []
 
     def step(self, action):
+
+        self.action_seq.append(action)
+        actions = str(self.action_seq)
+        if actions in self.Xs.keys():
+            self.X = self.Xs[actions]
+            self.base_score = self.get_score(self.X)
+            self.data = self.datas[actions]
+            return self.is_done()
 
         df = self.data
         columns = df.columns
@@ -75,7 +87,8 @@ class Action(object):
                         df[new_col_name] = tmp1
                         self.X = tmp2
         self.base_score = self.get_score(self.X)
-
+        self.Xs[actions] = self.X
+        self.datas[actions] = self.data.copy()
         return self.is_done()
 
     def is_done(self):
@@ -111,36 +124,21 @@ class Action(object):
 
 class AmazonEmployeeEvn(object):
     def __init__(self, bounds):
-        data, _ = amazon()
-        self.label = data['ACTION'].values
-        data.drop('ACTION', axis=1, inplace=True)
+        data, self.label = dataset.get_amazon(False)
         self.action = Action(data, bounds, self.label)
         self.base_score = self.auc_score(self.action.X)
         self.state_dim = self.action.action_dim
         self.state = np.zeros(self.state_dim)
-        self.have_done = {}
-        self.action_seq = []
 
     def reset(self):
         self.state = np.zeros(self.state_dim)
         self.action.reset()
         self.base_score = self.auc_score(self.action.X)
-        self.action_seq = []
         return self.state
 
     def step(self, _action):
-
-        self.action_seq.append(_action)
-        actions = str(self.action_seq)
-        if actions in self.have_done.keys():
-            done = self.action.is_done()
-            reward = self.have_done[actions]
-            self.state[_action] += 1
-            return self.state, reward, done
-
         done = self.action.step(_action)
         reward = self._reward()
-        self.have_done[actions] = reward
         self.state[_action] += 1
         return self.state, reward, done
 

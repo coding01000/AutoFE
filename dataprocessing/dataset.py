@@ -1,4 +1,3 @@
-from catboost.datasets import amazon
 from dataprocessing.house_price_data import get_data
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
@@ -9,7 +8,8 @@ def get_house_price(is_test):
 
 
 def get_amazon(is_test):
-    train, test = amazon()
+    train = pd.read_csv('dataset/Amazon/train.csv')
+    test = pd.read_csv('dataset/Amazon/test.csv')
     if is_test:
         return train, test
 

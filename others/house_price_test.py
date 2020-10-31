@@ -1,4 +1,3 @@
-from catboost.datasets import amazon
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing

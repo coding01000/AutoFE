@@ -41,3 +41,4 @@ if __name__ == '__main__':
         print(f'score:{evaluate_a_regress_dataset(original_dataset, label)}')
     print(f'score:{evaluate_a_regress_dataset(original_dataset, label)}')
     print(original_dataset.columns)
+
