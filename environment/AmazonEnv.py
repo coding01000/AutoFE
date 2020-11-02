@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import scipy
 from itertools import combinations
@@ -131,3 +133,5 @@ class AmazonEnv(object):
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 
+    def sample(self):
+        return random.randint(0, self.action.action_dim - 1)

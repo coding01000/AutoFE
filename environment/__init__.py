@@ -1,0 +1,4 @@
+from environment.AmazonEnv import AmazonEnv
+from environment.BikeShareEnv import BikeShareEnv
+from environment.HousePriceEnv import HousePriceEnv
+from environment.TitanicEnv import TitanicEnv

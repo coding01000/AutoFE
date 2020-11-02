@@ -43,13 +43,13 @@ def get_data_(train):
     return train
 
 
-def get_data(is_test):
-    train = get_data_(pd.read_csv('dataset/HousePrice/train.csv'))
-    if is_test:
-        test = get_data_(pd.read_csv('dataset/HousePrice/test.csv'))
-        return train, test
-
-    label = train['SalePrice'].apply(np.log1p)
-    train.drop('Id', axis=1, inplace=True)
-    train.drop('SalePrice', axis=1, inplace=True)
-    return train, label
+# def get_data(is_test):
+#     train = get_data_(pd.read_csv('dataset/HousePrice/train.csv'))
+#     if is_test:
+#         test = get_data_(pd.read_csv('dataset/HousePrice/test.csv'))
+#         return train, test
+#
+#     label = train['SalePrice'].apply(np.log1p)
+#     train.drop('Id', axis=1, inplace=True)
+#     train.drop('SalePrice', axis=1, inplace=True)
+#     return train, label

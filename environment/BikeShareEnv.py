@@ -150,5 +150,7 @@ class BikeShareEnv(object):
         y = self.label
         stats = cross_validate(model, x, y, groups=None, scoring='r2',
                                cv=5, return_train_score=True)
-        return stats['test_score'].mean() * 100
+        return stats['test_score'].mean() * 1000
 
+    def sample(self):
+        return random.randint(0, self.action.action_dim - 1)

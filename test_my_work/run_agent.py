@@ -25,6 +25,7 @@ def run(env, env_name, load=False):
     K_epochs = 4  # update policy for K epochs
     eps_clip = 0.2  # clip parameter for PPO
     random_seed = None
+    max_score = 0
     #############################################
 
     if random_seed:
@@ -72,7 +73,8 @@ def run(env, env_name, load=False):
             if render:
                 env.render()
             if done:
-                print(i_episode, '---------------------', t, '---------', reward)
+                max_score = max(max_score, reward)
+                print(i_episode, '---------max_score:', max_score, '------------', t, '---------', reward)
                 break
 
         avg_length += t

@@ -20,6 +20,6 @@ if __name__ == "__main__":
     target_update = 200
     epsilon_decay = 1 / 10000
 
-    agent = DQNAgent(env, memory_size, batch_size, target_update, epsilon_decay, load_name, False)
+    agent = DQNAgent(env, memory_size, batch_size, target_update, epsilon_decay, load_name, True)
 
     agent.train(num_frames)

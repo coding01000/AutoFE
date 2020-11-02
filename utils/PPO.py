@@ -3,6 +3,7 @@ from torch import nn
 from torch.distributions import Categorical
 device = torch.device("cpu")
 
+
 class Memory:
     def __init__(self):
         self.actions = []
@@ -66,7 +67,7 @@ class ActorCritic(nn.Module):
 
         state_value = self.value_layer(state)
 
-        return action_logprobs, torch.squeeze(state_value).double(), dist_entropy
+        return action_logprobs, torch.squeeze(state_value), dist_entropy
 
 
 class PPO:
@@ -86,7 +87,6 @@ class PPO:
 
     def update(self, memory):
         # Monte Carlo estimate of state rewards:
-
         rewards = []
         discounted_reward = 0
         for reward, is_terminal in zip(reversed(memory.rewards), reversed(memory.is_terminals)):
@@ -96,7 +96,7 @@ class PPO:
             rewards.insert(0, discounted_reward)
 
         # Normalizing the rewards:
-        rewards = torch.DoubleTensor(rewards).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
 
         # convert list to tensor
@@ -114,6 +114,7 @@ class PPO:
 
             # Finding Surrogate Loss:
             advantages = rewards - state_values.detach()
+            # print(advantages.dtype, ratios.dtype)
             surr1 = ratios * advantages
             surr2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
             loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.01 * dist_entropy

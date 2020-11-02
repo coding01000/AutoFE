@@ -9,5 +9,5 @@ from test_my_work import run_agent
 
 if __name__ == '__main__':
     init_seed.init_seed()
-    print(BikeShareEnv(15).base_score)
-    # run_agent.run(BikeShareEnv(15), 'PPO_BikeShare_15', True)
+    # print(BikeShareEnv(50).base_score)
+    run_agent.run(BikeShareEnv(30), 'PPO_BikeShare_30_x1000', False)

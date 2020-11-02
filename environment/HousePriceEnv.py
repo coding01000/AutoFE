@@ -28,7 +28,7 @@ from torch.distributions import Categorical
 from torch.nn.utils import clip_grad_norm_
 import torch.optim as optim
 import torch
-import dataprocessing.house_price_data as hpd
+from dataprocessing import dataset
 import torch.nn.functional as F
 import sys
 
@@ -111,7 +111,7 @@ class Action(object):
 class HousePriceEnv(object):
     def __init__(self, bounds):
         # data, _ = amazon()
-        data, self.label = hpd.get_data(False)
+        data, self.label = dataset.get_house_price(False)
         self.action = Action(data, bounds)
         self.base_score = self.rmse_score(data.values)
         self.state_dim = self.action.action_dim
@@ -152,3 +152,5 @@ class HousePriceEnv(object):
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 
+    def sample(self):
+        return random.randint(0, self.action.action_dim - 1)
