@@ -1,6 +1,6 @@
 import sys
-sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
-sys.path.append('C:\\Users\\ZFY\\PycharmProjects\\AutoFE')
+import os
+sys.path.append(os.path.abspath('.'))
 import pandas as pd
 import torch
 from sklearn.metrics import mean_squared_error, r2_score
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     model = xDeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
     model.compile("adam", "mse", metrics=['mse'], )
 
-    history = model.fit(train_model_input, y_train.values, batch_size=256, epochs=60, verbose=2,
+    history = model.fit(train_model_input, y_train.values, batch_size=256, epochs=30, verbose=2,
                         validation_split=0.2)
     pred_ans = model.predict(test_model_input, batch_size=256)
     print("test MSE", round(r2_score(y_test.values, pred_ans), 4))

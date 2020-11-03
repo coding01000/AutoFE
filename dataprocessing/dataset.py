@@ -116,6 +116,14 @@ def get_data_(train):
     return train
 
 
+def get_customer_satisfaction():
+    dir = os.path.join(basepath, 'CustomerSatisfaction')
+    train = pd.read_csv(os.path.join(dir, 'train.csv'))
+    label = train['TARGET']
+    train.drop('TARGET', axis=1, inplace=True)
+    train.drop('ID', axis=1, inplace=True)
+    return train, label
+
 
 
 
