@@ -1,6 +1,7 @@
 from xgboost import XGBClassifier, XGBRegressor
 from utils.init_seed import get_seed
 from sklearn.model_selection import cross_validate
+import time
 
 
 def class_model(x, y):
@@ -16,3 +17,11 @@ def regress_model(x, y):
                            cv=5, return_train_score=True)
     return stats['test_score'].mean()
 
+
+def get_run_time(x, y):
+    model = XGBClassifier(random_state=get_seed())
+    model.fit(x, y)
+    start = time.time()
+    model.predict(x)
+    end = time.time()
+    return end - start

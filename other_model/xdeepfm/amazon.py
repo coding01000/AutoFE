@@ -17,6 +17,7 @@ if __name__ == "__main__":
     init_seed.init_seed()
     # data = pd.read_csv('./criteo_sample.txt')
     data, label = dataset.get_amazon(False)
+    print(len(label))
     # sparse_features = ['C' + str(i) for i in range(1, 27)]
     sparse_features = []
     # dense_features = ['I' + str(i) for i in range(1, 14)]
@@ -70,8 +71,13 @@ if __name__ == "__main__":
                   metrics=["binary_crossentropy", "auc"], )
 
     model.fit(train_model_input, y_train.values, batch_size=256, epochs=15, verbose=2, validation_split=0.2)
-
+    import time
+    start = time.time()
+    pred_ans = model.predict(train_model_input, 256)
     pred_ans = model.predict(test_model_input, 256)
+    end = time.time()
+    print(end - start)
+    print(len(pred_ans))
     print("")
     print("test LogLoss", round(log_loss(y_test.values, pred_ans), 4))
     print("test AUC", round(roc_auc_score(y_test.values, pred_ans), 4))

@@ -84,7 +84,7 @@ class Action(object):
                 c1 = self.data.columns[action[0]]
                 c2 = self.data.columns[action[1]]
                 tmp = self.data[c1].apply(str) + self.data[c2].apply(str)
-                ohe = OneHotEncoder(sparse=True, dtype=np.float32, handle_unknown='ignore')
+                ohe = OneHotEncoder(sparse=True, handle_unknown='ignore')
                 tmp = ohe.fit_transform(tmp.values.reshape(-1, 1))
             self.processed[_action] = tmp
         # if is_combinations:
@@ -145,12 +145,13 @@ class BikeShareEnv(object):
         return self.episodes[one_episode]
 
     def rmse_score(self, x):
-        model = tree.DecisionTreeRegressor(random_state=init_seed.get_seed())
-        # model = linear_model.LinearRegression()
+        from sklearn.ensemble import RandomForestRegressor
+        # model = linear_model.ridge_regression(random_state=init_seed.get_seed())
+        model = RandomForestRegressor(random_state=init_seed.get_seed(), n_jobs=-1)
         y = self.label
         stats = cross_validate(model, x, y, groups=None, scoring='r2',
                                cv=5, return_train_score=True)
-        return stats['test_score'].mean() * 1000
+        return stats['test_score'].mean() * 100
 
     def sample(self):
         return random.randint(0, self.action.action_dim - 1)

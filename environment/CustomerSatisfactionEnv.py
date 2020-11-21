@@ -54,20 +54,23 @@ class Action(object):
             if not is_combinations:
                 column_name = self.data.columns[action[0]]
                 tmp = self.transform_list[action[1]](self.data[[column_name]])
+                if np.isnan(tmp.data).sum() + np.isinf(tmp.data).sum() > 0:
+                    return True
             else:
                 c1 = self.data.columns[action[0]]
                 c2 = self.data.columns[action[1]]
                 tmp = self.data[c1].apply(str) + self.data[c2].apply(str)
-                ohe = OneHotEncoder(sparse=True, dtype=np.float32, handle_unknown='ignore')
+                ohe = OneHotEncoder(sparse=True, handle_unknown='ignore')
                 tmp = ohe.fit_transform(tmp.values.reshape(-1, 1))
             self.processed[_action] = tmp
-        if is_combinations:
             self.actions.remove(_action)
-        else:
-            start = action[0] * self.action_num
-            end = start + self.action_num
-            for i in range(start, end):
-                self.actions.remove(i)
+        # if is_combinations:
+        #     self.actions.remove(_action)
+        # else:
+        #     start = action[0] * self.action_num
+        #     end = start + self.action_num
+        #     for i in range(start, end):
+        #         self.actions.remove(i)
         return self.isDone()
 
     def isDone(self):
@@ -123,13 +126,13 @@ class CustomerSatisfactionEnv(object):
             C=1.0,
             fit_intercept=True,
             # random_state=432,
-            solver='liblinear',
+            solver='saga',
             max_iter=1000,
             random_state=init_seed.get_seed(),
-            # n_jobs=-1,
+            n_jobs=-1,
         )
         y = self.label
-        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
+        stats = cross_validate(model, x, y, groups=None, scoring='roc_auc', n_jobs=-1,
                                cv=5, return_train_score=True)
         return stats['test_score'].mean() * 100
 

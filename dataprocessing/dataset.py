@@ -119,6 +119,21 @@ def get_data_(train):
 def get_customer_satisfaction():
     dir = os.path.join(basepath, 'CustomerSatisfaction')
     train = pd.read_csv(os.path.join(dir, 'train.csv'))
+    remove = []
+    for col in train.columns:
+        if train[col].std() == 0:
+            remove.append(col)
+    train.drop(remove, axis=1, inplace=True)
+
+    remove = []
+    c = train.columns
+    for i in range(len(c) - 1):
+        v = train[c[i]].values
+        for j in range(i + 1, len(c)):
+            if np.array_equal(v, train[c[j]].values):
+                remove.append(c[j])
+    train.drop(remove, axis=1, inplace=True)
+
     label = train['TARGET']
     train.drop('TARGET', axis=1, inplace=True)
     train.drop('ID', axis=1, inplace=True)
