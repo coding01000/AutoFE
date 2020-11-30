@@ -45,5 +45,5 @@ transform_list = [
     tanh,
     sin,
     cos,
-    scale,
+    scale_,
 ]

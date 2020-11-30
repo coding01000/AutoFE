@@ -49,8 +49,8 @@ if __name__ == "__main__":
 
     model = xDeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
     model.compile("adam", "mse", metrics=['mse'], )
-
-    history = model.fit(train_model_input, y_train.values, batch_size=256, epochs=30, verbose=2,
+    print(len(train_model_input))
+    history = model.fit(train_model_input, y_train.values, batch_size=256, epochs=1000, verbose=2,
                         validation_split=0.2)
     pred_ans = model.predict(test_model_input, batch_size=256)
     print("test MSE", round(r2_score(y_test.values, pred_ans), 4))

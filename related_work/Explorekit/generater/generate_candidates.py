@@ -17,7 +17,7 @@ def generate_candidate_features_from_unary_transform(df: pd.DataFrame):
         #     continue
         # perform unary transform
         for operator in unary_operator_list:
-            candidates[f'{col}_{operator}'] = unary_operator_list[operator](df[[col]])
+            candidates[f'({col}___{operator})'] = unary_operator_list[operator](df[[col]])
 
     return candidates
 
@@ -30,20 +30,20 @@ def generate_candidate_features_from_binary_group_by_transform(df: pd.DataFrame,
         # preform group by transform
         if len(df[col].unique()) <= threshold:
             for operator in group_by_operator_list:
-                candidates[f'{col}_{new_feature}_{operator}'] = group_by_operator_list[operator](df, col, new_feature)
+                candidates[f'({col}___{new_feature}___{operator})'] = group_by_operator_list[operator](df, col, new_feature)
         elif len(df[new_feature].unique()) <= threshold:
             for operator in group_by_operator_list:
-                candidates[f'{new_feature}_{col}_{operator}'] = group_by_operator_list[operator](df, new_feature, col)
+                candidates[f'({new_feature}___{col}___{operator})'] = group_by_operator_list[operator](df, new_feature, col)
 
         # perform binary transform
         else:
             for operator in binary_operator_list:
                 if not (operator == 'division' and 0 in df[new_feature].values):
-                    candidates[f'{col}_{new_feature}_{operator}'] \
+                    candidates[f'({col}___{new_feature}___{operator})'] \
                         = binary_operator_list[operator](df[col], df[new_feature])
                 if operator in consider_order:
                     if not (operator == 'division' and 0 in df[col].values):
-                        candidates[f'{new_feature}_{col}_{operator}'] \
+                        candidates[f'({new_feature}___{col}___{operator})'] \
                             = binary_operator_list[operator](df[new_feature], df[col])
 
     return candidates

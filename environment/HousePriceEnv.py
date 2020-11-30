@@ -35,7 +35,7 @@ import sys
 from transform_function.transform_function import transform_list
 from utils import init_seed
 
-device = torch.device("cpu")     # "cuda:0" if torch.cuda.is_available() else "cpu"
+device = torch.device("cpu")  # "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 class Action(object):
@@ -106,6 +106,32 @@ class Action(object):
     def data_sets(self):
         x = scipy.sparse.hstack([self.processed[i] for i in self.episode_done])
         return x
+
+    def replay(self, _action):
+        action = np.zeros(2, dtype='int')
+        is_combinations = _action / self.action_num >= self.feature_nums
+        if not is_combinations:
+            action[0] = _action / self.action_num
+            action[1] = _action % self.action_num
+        else:
+            action[0] = self.combinations[_action - self.feature_nums * self.action_num - 1][0]
+            action[1] = self.combinations[_action - self.feature_nums * self.action_num - 1][1]
+        print(is_combinations, '..............', _action, f'---------[{action[0]}, {action[1]}], ')
+        if not is_combinations:
+            column_name = self.data.columns[action[0]]
+            if action[1] is 1:
+                is_combinations = True
+                tmp = self.data[column_name]
+            else:
+                tmp = self.transform_list[action[1]](self.data[[column_name]])
+                # if action[1] == 5:
+                #     print(tmp)
+                tmp = pd.Series(tmp.toarray().reshape([-1, ]))
+        else:
+            c1 = self.data.columns[action[0]]
+            c2 = self.data.columns[action[1]]
+            tmp = self.data[c1].apply(str) + self.data[c2].apply(str)
+        return tmp, is_combinations
 
 
 class HousePriceEnv(object):

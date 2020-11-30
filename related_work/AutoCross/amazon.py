@@ -1,7 +1,6 @@
 import sys
-sys.path.append('C:\\Users\\ZFY\\PycharmProjects\\AutoFE')
-sys.path.append('/GPUFS/ecnu_cqjin_caipeng/AutoFE')
-
+import os
+sys.path.append(os.path.abspath(__file__).split('AutoFE')[0] + 'AutoFE')
 from utils.init_seed import init_seed
 from related_work.AutoCross.beam_search.beam_search import search
 from related_work.AutoCross.feature_wise.model_train import evaluation_with_auc, evaluation_with_r2
@@ -14,8 +13,6 @@ if __name__ == '__main__':
     train, label = dataset.get_amazon(False)
     chosen_list = search(train, label, 15, 'class')
     print(chosen_list.keys())
-
-    # train = scipy.sparse.csr_matrix(train.values)
     train = None
     for i in chosen_list:
         if train is None:

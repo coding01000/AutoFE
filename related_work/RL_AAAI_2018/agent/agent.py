@@ -231,8 +231,13 @@ class DQNAgent:
 
         # networks: dqn, dqn_target
         self.dqn = Network(obs_dim, action_dim).to(self.device)
+
+        path = os.path.dirname(__file__).split('RL_AAAI_2018')[0] + 'RL_AAAI_2018'
+        path = os.path.join(path, 'model')
+        self.path = os.path.join(path, f'RL2018_{load_name}.pth')
+        print(f'model path: {self.path}')
         if is_load:
-            self.dqn.load_state_dict(torch.load(f'./model/RL2018_{load_name}.pth'))
+            self.dqn.load_state_dict(torch.load(self.path))
         self.dqn_target = Network(obs_dim, action_dim).to(self.device)
         self.dqn_target.load_state_dict(self.dqn.state_dict())
         self.dqn_target.eval()
@@ -308,10 +313,13 @@ class DQNAgent:
         losses = []
         scores = []
         score = 0
+        max_score = 0
+        max_process = []
+        process = []
 
         for frame_idx in range(self.frame_ptr, num_frames + 1):
             action = self.select_action(state)
-
+            process.append(action)
             next_state, reward, done = self.step(action)
 
             state = next_state
@@ -328,6 +336,11 @@ class DQNAgent:
                 scores.append(score)
                 # print(frame_idx, reward)
                 # print(frame_idx, score)
+                if score > max_score:
+                    max_score = score
+                    max_process = process
+                print(f'max score: {max_score}, process: {max_process}')
+                process = []
                 score = 0
 
             # if training is ready
@@ -353,7 +366,7 @@ class DQNAgent:
                 self._plot(frame_idx, scores, losses, epsilons)
                 os.system('clear')
                 self.frame_ptr = frame_idx
-                torch.save(self.dqn_target.state_dict(), f'./model/RL2018_{self.load_name}.pth')
+                torch.save(self.dqn_target.state_dict(), self.path)
                 # self.save('./model/agent.pth')
 
         # self.env.close()

@@ -11,12 +11,14 @@ from other_model.xdeepfm.deepctr_torch.inputs import SparseFeat, DenseFeat, get_
 from other_model.xdeepfm.deepctr_torch.models import *
 from dataprocessing import dataset
 from utils import init_seed
+import time
 
 
 if __name__ == "__main__":
     init_seed.init_seed()
     # data = pd.read_csv('./criteo_sample.txt')
     data, label = dataset.get_customer_satisfaction()
+    print(len(data))
     # sparse_features = ['C' + str(i) for i in range(1, 27)]
     sparse_features = []
     # dense_features = ['I' + str(i) for i in range(1, 14)]
@@ -58,9 +60,9 @@ if __name__ == "__main__":
     # print(len(train[target].values), train[target].values.sum())
     device = 'cpu'
     use_cuda = True
-    if use_cuda and torch.cuda.is_available():
-        print('cuda ready...')
-        device = 'cuda:0'
+    # if use_cuda and torch.cuda.is_available():
+    #     print('cuda ready...')
+    #     device = 'cuda:0'
 
     model = xDeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
                    task='binary',
@@ -68,10 +70,13 @@ if __name__ == "__main__":
 
     model.compile("adagrad", "binary_crossentropy",
                   metrics=["binary_crossentropy", "auc"], )
+    print('___fit:')
+    model.fit(train_model_input, y_train.values, batch_size=1024, epochs=15, verbose=2, validation_split=0.2)
 
-    model.fit(train_model_input, y_train.values, batch_size=256, epochs=15, verbose=2, validation_split=0.2)
-
+    start = time.time()
+    pred_ans = model.predict(train_model_input, 256)
     pred_ans = model.predict(test_model_input, 256)
-    print("")
+    end = time.time()
+    print('time :', end-start)
     print("test LogLoss", round(log_loss(y_test.values, pred_ans), 4))
     print("test AUC", round(roc_auc_score(y_test.values, pred_ans), 4))

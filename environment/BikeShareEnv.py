@@ -87,13 +87,6 @@ class Action(object):
                 ohe = OneHotEncoder(sparse=True, handle_unknown='ignore')
                 tmp = ohe.fit_transform(tmp.values.reshape(-1, 1))
             self.processed[_action] = tmp
-        # if is_combinations:
-        # self.actions.remove(_action)
-        # else:
-        #     start = action[0] * self.action_num
-        #     end = start + self.action_num
-        #     for i in range(start, end):
-        #         self.actions.remove(i)
         return self.isDone()
 
     def isDone(self):
@@ -106,6 +99,30 @@ class Action(object):
     def data_sets(self):
         x = scipy.sparse.hstack([self.processed[i] for i in self.episode_done])
         return x
+
+    def replay(self, _action):
+        action = np.zeros(2, dtype='int')
+        is_combinations = _action / self.action_num >= self.feature_nums
+        if not is_combinations:
+            action[0] = _action / self.action_num
+            action[1] = _action % self.action_num
+        else:
+            action[0] = self.combinations[_action - self.feature_nums * self.action_num - 1][0]
+            action[1] = self.combinations[_action - self.feature_nums * self.action_num - 1][1]
+        print(is_combinations, '..............', _action, f'---------[{action[0]}, {action[1]}], ')
+        if not is_combinations:
+            column_name = self.data.columns[action[0]]
+            if action[1] is 1:
+                is_combinations = True
+                tmp = self.data[column_name]
+            else:
+                tmp = self.transform_list[action[1]](self.data[[column_name]])
+                tmp = pd.Series(tmp.toarray().reshape([-1, ]))
+        else:
+            c1 = self.data.columns[action[0]]
+            c2 = self.data.columns[action[1]]
+            tmp = self.data[c1].apply(str) + self.data[c2].apply(str)
+        return tmp, is_combinations
 
 
 class BikeShareEnv(object):
@@ -146,8 +163,8 @@ class BikeShareEnv(object):
 
     def rmse_score(self, x):
         from sklearn.ensemble import RandomForestRegressor
-        # model = linear_model.ridge_regression(random_state=init_seed.get_seed())
-        model = RandomForestRegressor(random_state=init_seed.get_seed(), n_jobs=-1)
+        model = linear_model.LinearRegression()
+        # model = RandomForestRegressor(random_state=init_seed.get_seed(), n_jobs=-1)
         y = self.label
         stats = cross_validate(model, x, y, groups=None, scoring='r2',
                                cv=5, return_train_score=True)

@@ -3,3 +3,11 @@ from environment.BikeShareEnv import BikeShareEnv
 from environment.HousePriceEnv import HousePriceEnv
 from environment.TitanicEnv import TitanicEnv
 from environment.CustomerSatisfactionEnv import CustomerSatisfactionEnv
+from environment.CreditEnv import CreditEnv
+from environment.BankEnv import BankEnv
+from environment.PropertyEnv import PropertyEnv
+from environment.StoreEnv import StoreEnv
+from environment.CarEnv import CarEnv
+from environment.MarketEnv import MarketEnv
+from environment.MarketingEnv import MarketingEnv
+from environment.HouseSalesEnv import HouseSalesEnv

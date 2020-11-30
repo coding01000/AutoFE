@@ -1,7 +1,7 @@
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.model_selection import cross_validate
-from sklearn import tree
+# from sklearn import tree
 
 from utils import init_seed
 
@@ -14,6 +14,7 @@ def auc_score(x, y):
         random_state=init_seed.get_seed(),
         solver='liblinear',
         max_iter=1000,
+        # n_jobs=-1
     )
     stats = cross_validate(model, x, y, groups=None, scoring='roc_auc',
                            cv=5, return_train_score=True)
@@ -21,7 +22,7 @@ def auc_score(x, y):
 
 
 def r2_score(x, y):
-    model = tree.DecisionTreeRegressor(random_state=init_seed.get_seed())
+    model = LinearRegression()
     stats = cross_validate(model, x, y, groups=None, scoring='r2',
                            cv=5, return_train_score=True)
     return stats['test_score'].mean() * 100

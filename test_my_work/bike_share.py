@@ -12,4 +12,5 @@ warnings.filterwarnings('ignore')
 if __name__ == '__main__':
     init_seed.init_seed()
     print(BikeShareEnv(15).base_score)
-    run_agent.run(BikeShareEnv(15), 'PPO_BikeShare_15_x1000', False)
+    run_agent.run(BikeShareEnv(25), 'PPO_BikeShare_25', False)
+# 38.6937

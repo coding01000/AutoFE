@@ -14,8 +14,9 @@ def search(df: pd.DataFrame, label, expand_depth, kind):
     # the list of chosen crossing feature
     chosen_list = {}
     # init root node
+    print('----------start--------------')
     expand_set = expanded_root_node(df)
-
+    print(len(expand_set))
     bar = tqdm(total=expand_depth, desc='beam search')
     for i in range(expand_depth):
         # store the score
@@ -43,6 +44,7 @@ def search(df: pd.DataFrame, label, expand_depth, kind):
             print(evaluation_with_auc(chosen_, label))
         else:
             print(evaluation_with_r2(chosen_, label))
+        print(chosen_list.keys())
 
         expand_set = expansion(chosen)
 

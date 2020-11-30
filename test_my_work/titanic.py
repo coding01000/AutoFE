@@ -9,5 +9,5 @@ from test_my_work import run_agent
 
 if __name__ == '__main__':
     init_seed.init_seed()
-    print(TitanicEnv(15).base_score)
-    # run_agent.run(TitanicEnv(15), 'PPO_Titanic_15', True)
+    # print(TitanicEnv(15).base_score)
+    run_agent.run(TitanicEnv(15), 'PPO_Titanic_15', True)

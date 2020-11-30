@@ -30,7 +30,7 @@ def expanded_root_node(original_data: pd.DataFrame):
     columns = list(df.columns)
     combs = combinations(columns, 2)
     for pair in combs:
-        if pair is pair_is_eq(pair):
+        if pair_is_eq(pair) is True:
             continue
         name = f'{pair[0]}___{pair[1]}'
         tmp = df[pair[0]].apply(str) + df[pair[1]].apply(str)
